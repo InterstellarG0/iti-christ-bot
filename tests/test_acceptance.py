@@ -1,4 +1,4 @@
-"""Acceptance tests for Christ Bot v1.2.4, mapped to the handoff's 11 tests
+"""Acceptance tests for Christ Bot v1.2.5, mapped to the handoff's 11 tests
 plus dual-edition safeguards.
 
 Run: python3 -m unittest discover -s tests -v
@@ -229,7 +229,7 @@ class TestAcceptance(unittest.TestCase):
         self.assertIn("do not have a retrieved passage specifically tagged for courage", r3["text"])
 
     def test_23_all_new_topics_give_a_passage(self):
-        # v1.2.4: 25 ready topics plus 5 manual groups. Each sample is
+        # v1.2.5: 25 ready topics plus 5 manual groups. Each sample is
         # chosen to match only that topic, so the expected passage is
         # the first tagged passage in corpus order for that topic.
         cases = [
@@ -329,6 +329,26 @@ class TestAcceptance(unittest.TestCase):
         self.assertIn("988", r2["text"])
         self.assertFalse(r2["pause_offered"])
         self.assertNotIn("Scripture", r2["text"])
+
+    def test_29_evidence_topic_gives_labeled_summary_not_scripture(self):
+        # v1.2.5: evidence is a labeled summary of an external archive,
+        # not a retrieved passage, and never presented as proof.
+        s = fresh()
+        respond(s, "Hello")
+        r = respond(s, "Did Jesus exist outside the Bible?")
+        self.assertIn("Summary (not Scripture)", r["text"])
+        self.assertIn("0xsero.github.io/all-historical-evidence-of-jesus-christ", r["text"])
+        self.assertIn("Josephus", r["text"])
+        self.assertIn("James ossuary", r["text"])
+        self.assertNotIn("Scripture (Ethiopian", r["text"])
+        self.assertTrue(r["pause_offered"])
+        r2 = respond(s, "Show me a verse about this please")
+        self.assertIn("Summary (not Scripture)", r2["text"])
+        self.assertNotIn("I do not have a retrieved passage for that topic", r2["text"])
+        s2 = fresh()
+        respond(s2, "Hello")
+        r3 = respond(s2, "What is the historical evidence for Jesus?")
+        self.assertIn("Summary (not Scripture)", r3["text"])
 
 
 if __name__ == "__main__":

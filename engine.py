@@ -1,5 +1,5 @@
 """
-Christ Bot v1.2.4 - core reflection engine.
+Christ Bot v1.2.5 - core reflection engine.
 
 Design choices, stated plainly:
 - This engine is deterministic and retrieval-only for Scripture. It does
@@ -247,6 +247,8 @@ TOPICS = [
      "Life, and what makes it feel full rather than just busy or thin, sounds like what you are asking about."),
     ("money", ["money", "finances", "financial", "bills", "debt", "paycheck", "work", "working", "job"],
      "Work, money, and financial stress, and how they press on everything else, sounds like what is weighing on you."),
+    ("evidence", ["evidence", "historical evidence", "historical jesus", "did jesus exist", "is jesus real", "proof of jesus", "prove jesus", "ancient witnesses", "outside the bible", "proof"],
+     "Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about."),
 ]
 
 INTERPRETATIONS = {
@@ -482,6 +484,11 @@ INTERPRETATIONS = {
         "money and compassion for financial hardship belong together, and struggling financially "
         "does not automatically mean spiritual failure. If bills or debt are overwhelming, practical "
         "help from trusted people and services matters alongside reflection."
+    ),
+    "evidence": (
+        "Interpretation, not Scripture: historical evidence is treated here as a separate kind of "
+        "material from Scripture itself. It can inform what you think about Jesus as a historical "
+        "figure, without settling theological claims, and disputed artifacts should be named as disputed."
     ),
 }
 
@@ -995,6 +1002,8 @@ def respond(session: Session, user_text: str) -> dict:
         topic = session.last_topic
         verse = _verse_for_topic(session.corpus, topic)
         session.turns += 1
+        if topic == "evidence":
+            return _finish(session, _evidence_sections(session.last_reflection or "Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about."), pause_offered=True)
         if not verse:
             return _finish(session, [
                 ("Reflection", "I do not have a retrieved passage for that topic in the local corpus, so I will not invent one."),
@@ -1037,6 +1046,8 @@ def respond(session: Session, user_text: str) -> dict:
         topic = session.last_topic
         verse = _verse_for_topic(session.corpus, topic)
         session.turns += 1
+        if topic == "evidence":
+            return _finish(session, _evidence_sections(session.last_reflection or "Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about."), pause_offered=True)
         if not verse:
             return _finish(session, [
                 ("Reflection", "I do not have a retrieved passage for that topic in the local corpus, so I will not invent one."),
@@ -1056,6 +1067,9 @@ def respond(session: Session, user_text: str) -> dict:
     # --- Subsequent topic turn: reflect, then offer scripture with separation ---
     if found_topic:
         topic, reflection = found_topic
+        if topic == "evidence":
+            session.turns += 1
+            return _finish(session, _evidence_sections(reflection), pause_offered=True)
         verse = _verse_for_topic(session.corpus, topic)
         session.turns += 1
         sections = [("Reflection", reflection)]
@@ -1103,6 +1117,38 @@ def _generic_interpretation() -> str:
         "settle a personal question on its own. Any reading offered here is "
         "interpretation, not part of the quoted text."
     )
+
+
+def _evidence_sections(reflection: str) -> list[tuple[str, str]]:
+    # Labeled summary of an external archive, never presented as Scripture
+    # and never presented as proof on its own. No passage is invented here.
+    return [
+        ("Reflection", reflection),
+        ("Summary (not Scripture)", (
+            "This is a summary of an external research archive, not a passage from the "
+            "Ethiopian or King James text. The archive, all-historical-evidence-of-jesus-christ "
+            "by 0xSero, is a chronological dossier (175 life entries, 100 scriptural connections, "
+            "238 references, research cutoff 26 October 2026) with a searchable reader of 335 documents."
+        )),
+        ("Sources in that archive", (
+            "Outside the New Testament, it collects Josephus, Tacitus, Suetonius, Lucian, Mara bar "
+            "Serapion, the Talmud, Thallus and Phlegon; Roman legal documents including Pliny and "
+            "Trajan and Hadrian's rescript; church fathers including Didache, Clement, Ignatius, "
+            "Papias, Justin, Irenaeus, Eusebius, Origen, Hippolytus, and Athanasius; and archaeology "
+            "including the Pilate inscription, ossuaries, Dura-Europos, Megiddo, and the Frankfurt amulet."
+        )),
+        ("Honest limits", (
+            "The dossier is a secondary compilation, not a primary source, and it flags disputed cases "
+            "as disputed, including the James ossuary, the Nazareth inscription's provenance, and the "
+            "shroud's dating. Evidence can support that Jesus existed, in the view of many historians, "
+            "without settling theological claims about who he was, which only you can weigh."
+        )),
+        ("Searchable reader", (
+            "https://0xsero.github.io/all-historical-evidence-of-jesus-christ/ "
+            "Repo: https://github.com/0xSero/all-historical-evidence-of-jesus-christ"
+        )),
+        ("Question", "Which part would help most: an ancient witness outside the New Testament, a church father, or an archaeology entry?"),
+    ]
 
 
 def _verse_for_topic(corpus: dict, topic: str) -> dict | None:
