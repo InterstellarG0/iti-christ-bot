@@ -1,11 +1,18 @@
 """
-Christ Bot v1.1 - core reflection engine.
+Christ Bot v1.2 - core reflection engine.
 
 Design choices, stated plainly:
 - This engine is deterministic and retrieval-only for Scripture. It does
   NOT generate biblical text from a language model. A passage is quoted
-  only if it is found in scripture/corpus.json (or a fuller verified
-  file in the same schema). If it is not found, the engine says so.
+  only if it is found in scripture/ethiopian_corpus.json (foundation)
+  or, for the KJV parallel, in scripture/corpus.json. If it is not
+  found, the engine says so.
+- Foundation: Ethiopian Orthodox Bible, modern English compilation in
+  the PDF supplied by Anthony, rooted in the Septuagint and Ge'ez
+  tradition. It is not an ancient manuscript itself. King James is
+  shown only as a separate parallel, never merged into Ethiopian text.
+- Every passage carries a canon label: shared, deuterocanonical, or
+  ethiopian-only. No tradition is presented as universally accepted.
 - There is no persistent memory in Phase 1. A Session lives in memory
   only, for one conversation, and is cleared on reset or restart.
 - Crisis language overrides everything else. The engine does not
@@ -24,6 +31,13 @@ import re
 from pathlib import Path
 
 CORPUS_PATH = Path(__file__).resolve().parent / "scripture" / "corpus.json"
+ETHIOPIAN_CORPUS_PATH = Path(__file__).resolve().parent / "scripture" / "ethiopian_corpus.json"
+
+ETHIOPIAN_TRANSLATION = (
+    "Ethiopian Orthodox Bible, modern English compilation "
+    "(Septuagint/Ge'ez tradition)"
+)
+KJV_TRANSLATION = "KJV (public domain)"
 
 CRISIS_TEXT = (
     "If you feel you may act on thoughts of harming yourself right now, "
@@ -74,11 +88,38 @@ BOOK_ALIASES = {
     "peter": "Peter", "1 peter": "1 Peter",
     "hebrews": "Hebrews", "heb": "Hebrews",
     "joshua": "Joshua", "josh": "Joshua",
+    "jubilees": "Jubilees", "enoch": "Enoch", "2 enoch": "2 Enoch",
+    "meqabyan i": "Meqabyan I", "meqabyan ii": "Meqabyan II",
+    "meqabyan iii": "Meqabyan III", "meqabyan": "Meqabyan I",
+    "tobit": "Tobit", "judith": "Judith", "wisdom": "Wisdom",
+    "sirach": "Sirach", "baruch": "Baruch", "susanna": "Susanna",
+    "prayer of manasses": "Prayer of Manasses",
+    "1 esdras": "1 Esdras", "2 esdras": "2 Esdras",
+    "1 clement": "1 Clement", "4 baruch": "4 Baruch",
 }
 
 REF_RE = re.compile(
     r"\b([1-3]?\s*[A-Za-z]+)\s+(\d+)\s*:\s*(\d+(?:\s*-\s*\d+)?)\b"
 )
+
+# Multi-word book names that the single-word pattern cannot capture.
+# Listed longest first so "Song of the Three Children" wins over "Song".
+MULTIWORD_BOOKS = [
+    "Song of the Three Children", "Prayer of Manasses",
+    "Bel and the Dragon", "Letter of Jeremiah",
+    "Additions to Esther", "Meqabyan I", "Meqabyan II", "Meqabyan III",
+    "1 Esdras", "2 Esdras", "1 Clement", "4 Baruch", "2 Enoch",
+    "Song of Songs",
+]
+
+# Books whose corpus chapter is not the chapter a reader would
+# naturally ask for, because the PDF continues Daniel/Baruch numbering.
+# Susanna is Daniel 13, Bel is Daniel 14, Letter of Jeremiah is Baruch 6.
+CHAPTER_ALIASES = {
+    "Susanna": 13,
+    "Bel and the Dragon": 14,
+    "Letter of Jeremiah": 6,
+}
 
 CRISIS_PATTERNS = [
     r"\bkill myself\b", r"\bkill yourself\b", r"\bcommit suicide\b",
@@ -203,20 +244,91 @@ LENSES_TEXT = (
 
 
 def load_corpus(path: Path | None = None) -> dict:
-    path = path or CORPUS_PATH
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
-    verses = {}
-    for v in data.get("verses", []):
-        verses[canonical_ref(v["reference"])] = v
+    """Load the dual edition: Ethiopian foundation first, KJV parallel.
+
+    Ethiopian verses are keyed by canonical reference, with "Psalms"
+    normalized to "Psalm" and "Psalm 151" stored as "Psalm 151:1"
+    (not "Psalm 151 1:1"). Topics are copied from the KJV starter
+    corpus where the same reference exists, so topic retrieval keeps
+    working with Ethiopian wording.
+    """
+    # KJV starter corpus, for the parallel only.
+    kjv_verses: dict[str, dict] = {}
+    kjv_by_ref: dict[str, dict] = {}
+    if CORPUS_PATH.exists():
+        with open(CORPUS_PATH, encoding="utf-8") as f:
+            kjv_data = json.load(f)
+        for v in kjv_data.get("verses", []):
+            key = canonical_ref(v["reference"])
+            kjv_verses[key] = v
+            kjv_by_ref[key] = v
+
+    verses: dict[str, dict] = {}
+    books: dict[str, str] = {}
+    if ETHIOPIAN_CORPUS_PATH.exists():
+        with open(ETHIOPIAN_CORPUS_PATH, encoding="utf-8") as f:
+            eth = json.load(f)
+        for book_raw, book_data in eth.get("books", {}).items():
+            canon = book_data.get("canon", "shared")
+            book = "Psalm" if book_raw == "Psalms" else book_raw
+            books[book] = canon
+            for chapter_raw, chapter_verses in book_data.get("chapters", {}).items():
+                for verse_raw, verse_text in chapter_verses.items():
+                    if book == "Psalm 151":
+                        ref = f"Psalm 151:{verse_raw}"
+                    else:
+                        ref = f"{book} {chapter_raw}:{verse_raw}"
+                    entry: dict = {
+                        "reference": ref,
+                        "text": verse_text,
+                        "canon": canon,
+                        "topics": list(kjv_by_ref.get(ref, {}).get("topics", [])),
+                    }
+                    verses[ref] = entry
+                    # Chapter aliases for single-chapter books whose
+                    # corpus chapter continues Daniel/Baruch numbering.
+                    if book in CHAPTER_ALIASES and chapter_raw == str(CHAPTER_ALIASES[book]):
+                        alias_ref = f"{book} 1:{verse_raw}"
+                        alias_entry = dict(entry)
+                        alias_entry["reference"] = alias_ref
+                        alias_entry["corpus_reference"] = ref
+                        verses[alias_ref] = alias_entry
+    # Manual topics for Ethiopian-only passages with no KJV match.
+    manual_topics = {
+        "Psalm 151:1": ["hope", "strength"],
+        "Psalm 151:7": ["hope", "strength"],
+        "Jubilees 1:1": ["creation"],
+        "Enoch 1:1": ["hope"],
+    }
+    for ref, topics in manual_topics.items():
+        if ref in verses:
+            verses[ref]["topics"] = topics
+
     return {
-        "translation": data.get("translation", "KJV (public domain)"),
-        "note": data.get("note", ""),
+        "translation": ETHIOPIAN_TRANSLATION,
+        "kjv_translation": KJV_TRANSLATION,
+        "note": "Ethiopian foundation, KJV parallel shown separately, never merged.",
         "verses": verses,
+        "kjv_verses": kjv_verses,
+        "books": books,
+        "verse_count": len(verses),
+        "kjv_count": len(kjv_verses),
     }
 
 
 def canonical_ref(raw: str) -> str:
+    # Psalm 151 is a book name plus a verse, not chapter 151.
+    m151 = re.search(r"\bPsalm\s+151\s*:\s*(\d+(?:\s*-\s*\d+)?)\b", raw, re.IGNORECASE)
+    if m151:
+        return f"Psalm 151:{re.sub(r'\\s+', '', m151.group(1))}"
+    # Multi-word books first.
+    for book in MULTIWORD_BOOKS:
+        m = re.search(
+            rf"\b{re.escape(book)}\s+(\d+)\s*:\s*(\d+(?:\s*-\s*\d+)?)\b",
+            raw, re.IGNORECASE,
+        )
+        if m:
+            return f"{book} {m.group(1)}:{re.sub(r'\\s+', '', m.group(2))}"
     m = REF_RE.search(raw)
     if not m:
         return raw.strip()
@@ -241,6 +353,16 @@ def detect_topic(text: str) -> tuple[str, str] | None:
 
 
 def extract_ref(text: str) -> str | None:
+    m151 = re.search(r"\bPsalm\s+151\s*:\s*(\d+(?:\s*-\s*\d+)?)\b", text, re.IGNORECASE)
+    if m151:
+        return f"Psalm 151:{re.sub(r'\\s+', '', m151.group(1))}"
+    for book in MULTIWORD_BOOKS:
+        m = re.search(
+            rf"\b{re.escape(book)}\s+(\d+)\s*:\s*(\d+(?:\s*-\s*\d+)?)\b",
+            text, re.IGNORECASE,
+        )
+        if m:
+            return f"{book} {m.group(1)}:{re.sub(r'\\s+', '', m.group(2))}"
     m = REF_RE.search(text)
     if not m:
         return None
@@ -280,14 +402,96 @@ def _sections_to_text(sections: list[tuple[str, str]]) -> str:
     return "\n\n".join(out)
 
 
-def _scripture_sections(corpus: dict, ref: str) -> list[tuple[str, str]] | None:
-    verse = corpus["verses"].get(canonical_ref(ref))
-    if not verse:
+def _ethiopian_text_for_ref(corpus: dict, ref: str) -> tuple[str, str] | None:
+    """Return (display_ref, text) for a single verse or a verse range.
+
+    Ranges are built verse by verse from the Ethiopian corpus, so a
+    range is never quoted from memory. If any verse in the range is
+    missing, the whole range is treated as not retrieved.
+    """
+    canon_ref = canonical_ref(ref)
+    # Psalm 151 range handling: "Psalm 151:1-2" etc.
+    if canon_ref.startswith("Psalm 151:") and "-" in canon_ref:
+        start_s, end_s = canon_ref.split(":", 1)[1].split("-", 1)
+        try:
+            start, end = int(start_s), int(end_s)
+        except ValueError:
+            return None
+        parts = []
+        for v in range(start, end + 1):
+            entry = corpus["verses"].get(f"Psalm 151:{v}")
+            if not entry:
+                return None
+            parts.append(entry["text"])
+        return canon_ref, " ".join(parts)
+    if "-" in canon_ref and ":" in canon_ref:
+        book_chapter, verse_range = canon_ref.rsplit(":", 1)
+        if "-" in verse_range:
+            start_s, end_s = verse_range.split("-", 1)
+            try:
+                start, end = int(start_s), int(end_s)
+            except ValueError:
+                return None
+            parts = []
+            for v in range(start, end + 1):
+                entry = corpus["verses"].get(f"{book_chapter}:{v}")
+                if not entry:
+                    return None
+                parts.append(entry["text"])
+            return canon_ref, " ".join(parts)
+    entry = corpus["verses"].get(canon_ref)
+    if not entry:
         return None
-    return [(
+    return canon_ref, entry["text"]
+
+
+def _canon_label_for_ref(corpus: dict, ref: str) -> str:
+    canon_ref = canonical_ref(ref)
+    # Book name is everything before the last " chapter:" part.
+    # For Psalm 151, the book is Psalm 151 itself.
+    if canon_ref.startswith("Psalm 151:"):
+        return corpus.get("books", {}).get("Psalm 151", "deuterocanonical")
+    m = re.match(r"^(.*?)\s+\d+:", canon_ref)
+    if not m:
+        return "shared"
+    return corpus.get("books", {}).get(m.group(1), "shared")
+
+
+def _scripture_sections(corpus: dict, ref: str) -> list[tuple[str, str]] | None:
+    found = _ethiopian_text_for_ref(corpus, ref)
+    if not found:
+        return None
+    display_ref, eth_text = found
+    canon = _canon_label_for_ref(corpus, ref)
+    canon_note = {
+        "shared": "Canon: shared, in both the Ethiopian Orthodox canon and the 66-book KJV canon.",
+        "deuterocanonical": "Canon: deuterocanonical, in Orthodox canons, not in the 66-book KJV canon.",
+        "ethiopian-only": "Canon: Ethiopian-only, in the Ethiopian Orthodox canon, not in the Protestant or Catholic canons in that form.",
+    }.get(canon, f"Canon: {canon}.")
+    sections = [(
         f"Scripture ({corpus['translation']})",
-        f'"{verse["text"]}"\n- {verse["reference"]}',
+        f'"{eth_text}"\n- {display_ref}\n{canon_note}',
     )]
+    kjv = corpus.get("kjv_verses", {}).get(canonical_ref(ref))
+    if kjv:
+        sections.append((
+            "King James Version (parallel, not merged)",
+            f'"{kjv["text"]}"\n- {kjv["reference"]}',
+        ))
+    elif canon == "shared":
+        sections.append((
+            "King James Version (parallel)",
+            "Not yet loaded for this passage. The KJV starter corpus has only "
+            "53 passages, so a missing parallel does not mean the passage is "
+            "not in the KJV canon. The Ethiopian text above is the foundation, "
+            "and no wording has been merged between editions.",
+        ))
+    else:
+        sections.append((
+            "King James Version (parallel)",
+            "No parallel in the 66-book KJV canon for this passage.",
+        ))
+    return sections
 
 
 def respond(session: Session, user_text: str) -> dict:
@@ -301,14 +505,34 @@ def respond(session: Session, user_text: str) -> dict:
         return _info(session, (
             "Commands you can use:\n"
             "/verse John 3:16 - retrieve a passage by reference, if it is in the local corpus\n"
+            "/edition - show the foundation edition, KJV parallel, and canon labels\n"
             "/lenses - show the five lenses used here\n"
             "/pause - take a Sacred Pause\n"
             "/continue - continue the conversation\n"
             "/privacy - how this prototype handles your words\n"
             "/reset - clear this session only\n"
             "/quit - leave\n\n"
+            "The foundation is the Ethiopian Orthodox Bible, in a modern English "
+            "compilation rooted in the Septuagint and Ge'ez tradition. King James "
+            "is shown only as a separate parallel, never merged into Ethiopian text. "
             "You can also just talk. I will listen first, and I will not quote "
             "Scripture in my first reply unless you ask for a specific passage."
+        ))
+    if low in ("/edition", "edition"):
+        corpus = session.corpus
+        return _info(session, (
+            "Foundation edition: Ethiopian Orthodox Bible, modern English compilation "
+            "rooted in the Septuagint and Ge'ez tradition. This PDF is a modern "
+            "compilation, not an ancient manuscript itself.\n"
+            f"Ethiopian passages in this build: {corpus.get('verse_count', len(corpus['verses']))}\n"
+            f"King James parallel passages in this build: {corpus.get('kjv_count', len(corpus.get('kjv_verses', {})))}\n"
+            "Canon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), "
+            "deuterocanonical (in Orthodox canons, not in the 66-book canon), and "
+            "ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\n"
+            "Susanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, "
+            "and the Song of the Three Children as Daniel 3:24-97, as in the PDF. "
+            "You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, "
+            "and I will map those to the corpus chapters."
         ))
     if low in ("/privacy", "privacy"):
         return _info(session, (
@@ -374,16 +598,26 @@ def respond(session: Session, user_text: str) -> dict:
             sections = [
                 ("Reflection", "I looked for that passage in the local corpus, and I could not retrieve it."),
                 ("Not retrieved", (
-                    f"I do not have {canonical_ref(ref)} in the starter corpus, so I will not quote it from memory. "
+                    f"I do not have {canonical_ref(ref)} in the Ethiopian corpus, so I will not quote it from memory. "
                     "You can paste the passage yourself and I will work with it as user-supplied text, "
-                    "or I can offer a summary labeled as a summary, not as a quotation. "
-                    "A fuller verified Bible file can also be added to scripture/corpus.json."
+                    "or I can offer a summary labeled as a summary, not as a quotation."
                 )),
                 ("Question", "Would you like to paste the passage, or explore a nearby topic from the passages I do have?"),
             ]
             return _finish(session, sections, pause_offered=False)
         topic = None
-        verse = session.corpus["verses"][canonical_ref(ref)]
+        verse = session.corpus["verses"].get(canonical_ref(ref))
+        if verse is None and "-" in canonical_ref(ref):
+            # For a range, take topics from its first verse.
+            first_ref = canonical_ref(ref).split("-", 1)[0]
+            # first_ref is like "Psalm 121:1" already, or "Psalm 121:1" from "121:1-2"
+            verse = session.corpus["verses"].get(first_ref)
+            if verse is None:
+                # Range form "Psalm 121:1-2": first verse key is book chapter:1
+                base = canonical_ref(ref).rsplit(":", 1)[0]
+                verse = session.corpus["verses"].get(f"{base}:1")
+        if verse is None:
+            verse = {"topics": []}
         for t in verse.get("topics", []):
             if t in INTERPRETATIONS:
                 topic = t
@@ -431,7 +665,7 @@ def respond(session: Session, user_text: str) -> dict:
         session.turns += 1
         if not verse:
             return _finish(session, [
-                ("Reflection", "I do not have a retrieved passage for that topic in the starter corpus, so I will not invent one."),
+                ("Reflection", "I do not have a retrieved passage for that topic in the local corpus, so I will not invent one."),
                 ("Question", "Would you like to talk through the question itself, or paste a passage you want to reflect on?"),
             ], pause_offered=False)
         sections = [
@@ -458,7 +692,7 @@ def respond(session: Session, user_text: str) -> dict:
             else:
                 sections.append(("Interpretation (not Scripture)", _generic_interpretation()))
         else:
-            sections.append(("Note", "I do not have a retrieved passage for that topic in the starter corpus, so I will not invent one."))
+            sections.append(("Note", "I do not have a retrieved passage for that topic in the local corpus, so I will not invent one."))
         sections.append(("Question", "Does that reflection match what you meant, or is there a part I missed? You are free to disagree."))
         return _finish(session, sections, pause_offered=True, scripture_ref=verse["reference"] if verse else None)
 

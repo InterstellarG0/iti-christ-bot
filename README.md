@@ -1,4 +1,4 @@
-# Christ Bot v1.1 - Prototype
+# Christ Bot v1.2 - Prototype
 
 **Interstellar Religious Initiative (IRI)**
 Flagship of Interstellar Technologies Initiative, LLC (ITI)
@@ -6,6 +6,11 @@ Flagship of Interstellar Technologies Initiative, LLC (ITI)
 **Status:** Phase 2 prototype, pre-development product. This is a working
 first version, not a finished product, and not a replacement for clergy,
 professional care, or your own conscience.
+
+**Foundation, decided 2026-10-26:** Ethiopian Orthodox Bible, modern
+English compilation rooted in the Septuagint and Ge'ez tradition, with
+King James shown only as a separate parallel, never merged. The PDF
+itself is a modern compilation, not an ancient manuscript.
 
 ## What this is
 
@@ -53,10 +58,19 @@ python3 -m unittest discover -s tests -v
 This Phase 1 engine is deterministic, not a language model. That is a
 deliberate safeguard, not a missing feature:
 
-- Scripture is quoted only if it is found in `scripture/corpus.json`.
-  If a passage is not there, the engine says so and does not invent it.
+- Scripture is quoted only if it is found in `scripture/ethiopian_corpus.json`
+  (foundation, 40,236 unique verses in 88 books, extracted from the PDF
+  Anthony supplied) or, for the KJV parallel, in `scripture/corpus.json`
+  (53 passages). If a passage is not there, the engine says so and does
+  not invent it.
   It can work with a passage you paste, labeled clearly as
   user-supplied text, not as retrieved Scripture.
+- When Scripture is offered, the Ethiopian text comes first, with a
+  canon label (shared, deuterocanonical, or Ethiopian-only), then the
+  King James parallel in a separate labeled section if one exists.
+  Wordings are never merged. If a shared passage has no KJV parallel
+  loaded yet, the engine says so, rather than implying it is not in
+  the KJV canon.
 - The first reply listens. It does not quote Scripture unless you asked
   for a specific passage or your question is explicitly about a text.
 - When Scripture is offered, the text, the translation, and any
@@ -82,15 +96,20 @@ christbot/
   app.py                    # CLI + minimal web UI
   engine.py                 # conversation rules, safeguards, retrieval
   scripture/
-    corpus.json             # starter KJV corpus, retrieved only
-    README.md               # how to add a fuller verified Bible
+    corpus.json             # KJV starter corpus, parallel only (53 passages)
+    ethiopian_corpus.json   # Ethiopian foundation corpus (88 books, 40,236 verses)
+    ethiopian_pilot.json    # 4-passage pilot that proved the dual-edition model
+    README.md               # how the Ethiopian corpus was extracted and validated
+  tools/
+    extract_ethiopian.py    # reproducible PDF extraction script, stdlib only
   web/
     index.html              # minimal web UI
   tests/
-    test_acceptance.py      # 11 handoff acceptance tests + safeguards
+    test_acceptance.py      # 11 handoff acceptance tests + safeguards + dual-edition tests
   docs/
     handoff_v1.1.md         # binding specification used for this build
     ARCHITECTURE.md         # architecture and data flow
+    FOUNDATION.md           # Ethiopian foundation decision and dual-edition model
 ```
 
 ## What is immediate, and what is future
@@ -116,9 +135,16 @@ new privacy statement that matches what is actually built.
    the US default, adds Crisis Text Line and 911, and adds a local
    emergency number note for users outside the US. It does not claim
    to know the user's country.
-3. **A full Bible was not supplied.** The prototype ships a starter
-   corpus of 53 KJV passages and a documented path to replace it
-   with a fuller verified text. It refuses to fill gaps from memory.
+3. **A full Bible was not supplied at v1.1.** At v1.2 the Ethiopian
+   Orthodox PDF Anthony supplied was extracted with
+   `tools/extract_ethiopian.py` into a verse-level corpus. Validation:
+   Genesis 50 chapters / 1,533 verses, Exodus 1,213, Psalms 150 / 2,461,
+   Jeremiah 1,364, Ezekiel 1,273, Matthew 1,071, and John 879 all match
+   standard verse counts exactly. Susanna is stored as Daniel 13, Bel
+   as Daniel 14, and the Song of the Three Children as Daniel 3:24-97,
+   as in the PDF, with chapter-1 aliases for Susanna, Bel, and the
+   Letter of Jeremiah. The Daniel Greek-portions repeat and the Glossary
+   are excluded, so they do not contaminate Daniel or 1 Clement.
 4. **No model was specified.** The prototype ships without a model
    dependency, so it cannot hallucinate Scripture or sermonize. The
    system prompt is preserved for a future adapter, behind the same
@@ -126,10 +152,15 @@ new privacy statement that matches what is actually built.
 
 ## Known limitations
 
-- The starter corpus is small. Many legitimate passages will return
-  "could not retrieve" until a fuller verified Bible is added.
-- KJV punctuation follows common editions and may vary slightly by
-  printing. Verify against a printed KJV for academic citation.
+- The KJV parallel is still only 53 passages. A shared passage without
+  a loaded parallel will say so, rather than showing a KJV text.
+- Ethiopian text quality varies by book, as in the PDF itself. Shared
+  books are clean modern English. Enoch and Jubilees use older scholarly
+  translations with editorial brackets, which are retained, not cleaned
+  silently. Meqabyan I to III use a rough English rendering in the PDF,
+  with broken grammar in places, and are presented as-is, labeled
+  Ethiopian-only, not polished. Spot-check any passage before academic
+  citation, and treat "could not retrieve" as safer than a wrong quote.
 - The web UI is a local demo. It is not hardened for public deployment,
   authentication, or multi-user use.
 - This prototype does not diagnose, counsel, or provide pastoral care.

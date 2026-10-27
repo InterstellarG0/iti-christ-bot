@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Christ Bot v1.1 - Phase 2 prototype.
+Christ Bot v1.2 - Phase 2 prototype.
+
+Foundation: Ethiopian Orthodox Bible, modern English compilation
+rooted in the Septuagint and Ge'ez tradition, with King James shown
+only as a separate parallel, never merged.
 
 Run the CLI (no install, no account, no API key):
     python3 app.py
@@ -37,6 +41,8 @@ ROOT = Path(__file__).resolve().parent
 INTRO = """Christ Bot - a scripture-centered reflection companion.
 Interstellar Religious Initiative, flagship of Interstellar Technologies Initiative, LLC.
 
+Foundation: Ethiopian Orthodox Bible, modern English compilation rooted in
+the Septuagint and Ge'ez tradition, with King James as a separate parallel.
 I am software, not God, Jesus, a prophet, or a supernatural being.
 I do not know God's will for you, and I am not a replacement for clergy,
 a counselor, or your own conscience. You are free to disagree with me.
@@ -160,7 +166,7 @@ def run_web(corpus: dict, port: int) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Christ Bot v1.1 prototype")
+    parser = argparse.ArgumentParser(description="Christ Bot v1.2 prototype")
     parser.add_argument("--web", action="store_true", help="run the minimal web UI")
     parser.add_argument("--port", type=int, default=8000, help="web port (default 8000)")
     parser.add_argument("--demo", action="store_true", help="run a scripted demo conversation")
@@ -169,11 +175,12 @@ def main(argv: list[str] | None = None) -> int:
 
     corpus = load_corpus()
     if args.verses:
-        print(f"Translation: {corpus['translation']}")
-        print(f"Passages in this starter corpus: {len(corpus['verses'])}")
-        for ref in list_verses(corpus):
-            print(f" - {ref}")
+        print(f"Foundation: {corpus['translation']}")
+        print(f"Ethiopian passages in this build: {corpus.get('verse_count', len(corpus['verses']))}")
+        print(f"King James parallel passages: {corpus.get('kjv_count', len(corpus.get('kjv_verses', {})))}")
+        print(f"Books in the Ethiopian corpus: {len(corpus.get('books', {}))}")
         print("\nIf a passage is not listed here, the engine will say so rather than invent it.")
+        print("Use /verse in the CLI, or ask for a reference, to retrieve a passage.")
         return 0
     if args.demo:
         return run_demo(corpus)

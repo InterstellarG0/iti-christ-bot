@@ -1,4 +1,5 @@
-"""Acceptance tests for Christ Bot v1.1, mapped to the handoff's 11 tests.
+"""Acceptance tests for Christ Bot v1.2, mapped to the handoff's 11 tests
+plus dual-edition safeguards.
 
 Run: python3 -m unittest discover -s tests -v
 No network, no API key, standard library only.
@@ -29,7 +30,8 @@ class TestAcceptance(unittest.TestCase):
     def test_02_scripture_separated_from_interpretation(self):
         s = fresh()
         r = respond(s, "Show me John 3:16")
-        self.assertIn("Scripture (KJV", r["text"])
+        self.assertIn("Scripture (Ethiopian", r["text"])
+        self.assertIn("King James Version (parallel", r["text"])
         self.assertIn("For God so loved the world", r["text"])
         self.assertIn("Interpretation (not Scripture)", r["text"])
         # Scripture block must come before interpretation in the rendered text.
@@ -115,7 +117,7 @@ class TestAcceptance(unittest.TestCase):
         s = fresh()
         r = respond(s, "Here is a verse: Be kind to one another.")
         self.assertIn("User-supplied text (not retrieved", r["text"])
-        self.assertNotIn("Scripture (KJV", r["text"])
+        self.assertNotIn("Scripture (Ethiopian", r["text"])
 
     def test_13_no_exclusive_confidant(self):
         s = fresh()
@@ -127,8 +129,40 @@ class TestAcceptance(unittest.TestCase):
         s = fresh()
         respond(s, "I have been carrying a lot of worry lately.")
         r = respond(s, "yes")
-        self.assertIn("Scripture (KJV", r["text"])
+        self.assertIn("Scripture (Ethiopian", r["text"])
         self.assertIn("Interpretation (not Scripture)", r["text"])
+
+    def test_15_ethiopian_foundation_is_first_kjv_is_parallel(self):
+        s = fresh()
+        r = respond(s, "Show me Genesis 1:1")
+        self.assertIn("Scripture (Ethiopian", r["text"])
+        self.assertIn("In the beginning, God created the heavens and the earth.", r["text"])
+        self.assertIn("King James Version (parallel, not merged)", r["text"])
+        self.assertIn("Canon: shared", r["text"])
+        # Ethiopian text comes before the KJV parallel.
+        self.assertLess(r["text"].index("Scripture (Ethiopian"), r["text"].index("King James Version"))
+
+    def test_16_ethiopian_only_book_has_no_kjv_parallel(self):
+        s = fresh()
+        r = respond(s, "Show me Jubilees 1:1")
+        self.assertIn("Canon: Ethiopian-only", r["text"])
+        self.assertIn("No parallel in the 66-book KJV canon", r["text"])
+        r2 = respond(s, "Show me Psalm 151:1")
+        self.assertIn("Canon: deuterocanonical", r2["text"])
+        self.assertIn("I was small among my brothers", r2["text"])
+
+    def test_17_susanna_alias_maps_to_daniel_13(self):
+        s = fresh()
+        r = respond(s, "Show me Susanna 1:1")
+        self.assertIn("A man lived in Babylon", r["text"])
+        self.assertIn("Canon: deuterocanonical", r["text"])
+
+    def test_18_edition_command_states_foundation(self):
+        s = fresh()
+        r = respond(s, "/edition")
+        self.assertIn("Ethiopian Orthodox Bible", r["text"])
+        self.assertIn("modern English compilation", r["text"])
+        self.assertIn("not an ancient manuscript", r["text"])
 
 
 if __name__ == "__main__":
