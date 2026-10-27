@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Christ Bot - Phone Version</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; font-family: Georgia, serif; color: #1d2733; background: #f7f5ef; display: flex; flex-direction: column; }
+  header { padding: 16px 16px 8px; max-width: 760px; width: 100%; margin: 0 auto; }
+  header h1 { margin: 0 0 4px; font-size: 26px; }
+  header p { margin: 4px 0; color: #5a6a7d; line-height: 1.5; font-size: 15px; }
+  #chat { flex: 1; overflow-y: auto; padding: 8px 16px 16px; max-width: 760px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .msg { background: #fff; border: 1px solid #dbe3ec; border-radius: 12px; padding: 14px 16px; line-height: 1.6; font-size: 17px; }
+  .msg.you { background: #eef2f0; }
+  .msg.crisis { border-color: #8b1e1e; }
+  .who { font-family: system-ui, sans-serif; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #5a6a7d; margin-bottom: 8px; }
+  .section-label { font-family: system-ui, sans-serif; font-weight: 700; font-size: 14px; margin-top: 12px; }
+  .section-label:first-child { margin-top: 0; }
+  .scripture { font-style: italic; border-left: 3px solid #2f5d50; padding-left: 12px; }
+  .pause { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .pause button, .tools button { font-family: system-ui, sans-serif; border: 1px solid #2f5d50; background: #fff; color: #2f5d50; border-radius: 999px; padding: 10px 14px; cursor: pointer; font-size: 15px; min-height: 44px; }
+  .pause button:hover, .tools button:hover { background: #2f5d50; color: #fff; }
+  .composer { padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: #f7f5ef; border-top: 1px solid #dbe3ec; }
+  .composer-inner { max-width: 760px; margin: 0 auto; }
+  form { display: flex; gap: 10px; }
+  textarea { flex: 1; font-family: Georgia, serif; font-size: 17px; padding: 12px; border: 1px solid #dbe3ec; border-radius: 10px; resize: vertical; min-height: 56px; }
+  button.send { font-family: system-ui, sans-serif; background: #2f5d50; color: #fff; border: 0; border-radius: 10px; padding: 0 22px; cursor: pointer; font-size: 16px; min-height: 56px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  footer { padding: 0 16px 16px; color: #5a6a7d; font-size: 13px; line-height: 1.6; max-width: 760px; width: 100%; margin: 0 auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Christ Bot</h1>
+  <p>Ancient Wisdom, Modern Discernment. A scripture-centered reflection companion.</p>
+  <p>I am software, not God, Jesus, a prophet, or a supernatural being. I am not a replacement for clergy, a counselor, or your own conscience. You are free to disagree.</p>
+  <p id="counts"></p>
+</header>
+<main id="chat"></main>
+<div class="composer"><div class="composer-inner">
+  <form id="form">
+    <textarea id="input" placeholder="Share what is on your mind. I will listen first." aria-label="Your message"></textarea>
+    <button class="send" type="submit">Send</button>
+  </form>
+  <div class="tools">
+    <button type="button" data-cmd="Show me John 3:16">Example passage</button>
+    <button type="button" data-cmd="/lenses">Five lenses</button>
+    <button type="button" data-cmd="/edition">Edition</button>
+    <button type="button" data-cmd="/privacy">Privacy</button>
+    <button type="button" data-cmd="/reset">Clear this session</button>
+  </div>
+</div></div>
+<footer>
+  <p>This phone file runs entirely in your browser, on your device. There is no server, no account, and no network call. Your conversation lives only in this page, in memory. Closing or reloading the page, or using Clear this session, clears it. Nothing is sent anywhere.</p>
+  <p>If you feel you may act on thoughts of harming yourself, please call or text <strong>988</strong> in the United States, text HOME to <strong>741741</strong>, or call <strong>911</strong> if you are in immediate danger.</p>
+</footer>
+<script id="corpus-data" type="application/json">{"eth":__ETH__,"kjv":__KJV__,"topics":__TOPICS__}</script>
+<script>
+(function(){
+  var dataEl = document.getElementById('corpus-data');
+  var DATA = dataEl ? JSON.parse(dataEl.textContent) : {eth:{},kjv:{},topics:{}};
+  var ETH = DATA.eth, KJV = DATA.kjv, TOPICMAP = DATA.topics;
+  var verseCount = 0, bookCount = 0;
+  Object.keys(ETH).forEach(function(b){
+    bookCount++;
+    Object.keys(ETH[b][1]).forEach(function(ch){
+      Object.keys(ETH[b][1][ch]).forEach(function(){ verseCount++; });
+    });
+  });
+  // Psalm 151 verses are counted once in the loop above; the Python
+  // count also includes alias keys, so report the corpus verse count
+  // honestly as the number of unique verses in this file.
+  var countsEl = document.getElementById('counts');
+  if (countsEl) countsEl.textContent = 'Phone version v1.2.3. Foundation: Ethiopian Orthodox Bible (' + bookCount + ' books, ' + verseCount + ' verses in this file), King James parallel: ' + Object.keys(KJV).length + ' passages. Works offline after download, no server.';
+
+  var CRISIS_TEXT = "If you feel you may act on thoughts of harming yourself right now, please reach out for help immediately.\n\nIn the United States, call or text 988 to reach the Suicide and Crisis Lifeline. You can also text HOME to 741741 for the Crisis Text Line, or call 911 if you are in immediate danger.\nIf you are outside the United States, please contact your local emergency number or a trusted crisis service in your country, and consider telling a trusted person near you right now.\n\nI am pausing reflective conversation here so you can get real-world support. I am not a counselor or a replacement for professional care.";
+  var IDENTITY_TEXT = "I am Christ Bot, a scripture-centered reflection companion built by the Interstellar Religious Initiative. I am software, not God, Jesus, a prophet, or a supernatural being. I do not know God's will for you, and I am not a replacement for clergy, a counselor, or your own conscience. You are free to disagree with anything I offer.";
+  var ETH_TRANSLATION = "Ethiopian Orthodox Bible, modern English compilation (Septuagint/Ge'ez tradition)";
+  var MULTIWORD = ["Song of the Three Children","Prayer of Manasses","Bel and the Dragon","Letter of Jeremiah","Additions to Esther","Meqabyan I","Meqabyan II","Meqabyan III","1 Esdras","2 Esdras","1 Clement","4 Baruch","2 Enoch","Song of Songs"];
+  var ALIASES = {"bel":"Bel and the Dragon","genesis":"Genesis","gen":"Genesis","exodus":"Exodus","exod":"Exodus","psalm":"Psalm","psalms":"Psalm","ps":"Psalm","proverbs":"Proverbs","prov":"Proverbs","ecclesiastes":"Ecclesiastes","eccl":"Ecclesiastes","isaiah":"Isaiah","isa":"Isaiah","jeremiah":"Jeremiah","jer":"Jeremiah","lamentations":"Lamentations","lam":"Lamentations","micah":"Micah","mic":"Micah","matthew":"Matthew","matt":"Matthew","mt":"Matthew","mark":"Mark","mk":"Mark","luke":"Luke","lk":"Luke","john":"John","jn":"John","romans":"Romans","rom":"Romans","corinthians":"Corinthians","1 corinthians":"1 Corinthians","1 cor":"1 Corinthians","2 corinthians":"2 Corinthians","galatians":"Galatians","gal":"Galatians","ephesians":"Ephesians","eph":"Ephesians","philippians":"Philippians","phil":"Philippians","colossians":"Colossians","col":"Colossians","timothy":"Timothy","1 timothy":"1 Timothy","2 timothy":"2 Timothy","james":"James","jas":"James","peter":"Peter","1 peter":"1 Peter","hebrews":"Hebrews","heb":"Hebrews","joshua":"Joshua","josh":"Joshua","jubilees":"Jubilees","enoch":"Enoch","2 enoch":"2 Enoch","meqabyan i":"Meqabyan I","meqabyan ii":"Meqabyan II","meqabyan iii":"Meqabyan III","meqabyan":"Meqabyan I","tobit":"Tobit","judith":"Judith","wisdom":"Wisdom","sirach":"Sirach","baruch":"Baruch","susanna":"Susanna","prayer of manasses":"Prayer of Manasses","1 esdras":"1 Esdras","2 esdras":"2 Esdras","1 clement":"1 Clement","4 baruch":"4 Baruch"};
+  var CHAPTER_ALIASES = {"Susanna":["Susanna",13],"Bel and the Dragon":["Bel and the Dragon",14],"Letter of Jeremiah":["Letter of Jeremiah",6]};
+  var CRISIS_PATTERNS = [/\bkill myself\b/,/\bkill yourself\b/,/\bcommit suicide\b/,/\bsuicid\w*\b/,/\bend my life\b/,/\btake my own life\b/,/\bi want to die\b/,/\bi don'?t want to live\b/,/\bharm myself\b/,/\bhurt myself\b/,/\bcut myself\b/,/\bself[- ]harm\b/,/\bno reason to live\b/];
+  var TOPICS = [
+    ["forgiveness",["forgive","forgiveness","can't forgive","cannot forgive","someone hurt me","betrayed","resentment"],"Forgiveness, and what it does and does not require, sounds like it is at the center of this."],
+    ["grief",["grief","grieving","lost someone","died","death of","mourning","bereaved","passed away"],"Grief sounds like it is weighing on you right now, and that deserves space before any answers."],
+    ["anxiety",["anxious","anxiety","worried","worry","stressed","overwhelmed","panic","can't sleep","cannot sleep"],"Anxiety and the weight of what is uncertain sound like they are close to the surface here."],
+    ["fear",["afraid","fear","scared","frightened","terrified"],"Fear sounds like it is shaping how this feels right now."],
+    ["doubt",["doubt","doubting","not sure i believe","struggling to believe","lost faith","questioning my faith","unbelief"],"Doubt, and wanting to be honest about it rather than pretend, sounds like the real question here."],
+    ["decision",["decision","decide","what should i do","choice","discern","discernment","crossroads"],"A decision you want to discern carefully, not rush, sounds like what is in front of you."],
+    ["conflict",["conflict","argument","fight with","angry at","angry","disagreement","someone i love and"],"A conflict, and how to respond without doing more harm, sounds like what is on your mind."],
+    ["complaining",["complain","complaining","complaints","complaint","grumble","grumbling","murmur","murmuring"],"Being tired of complaints, whether your own or other people's, sounds like what is weighing on you."],
+    ["lust",["lust","lustful","lusting","temptation","tempted","porn","pornography","sexual desire"],"Lust, and wanting help with it rather than just feeling ashamed about it, sounds like what you are bringing here."],
+    ["loneliness",["lonely","loneliness","alone","no one to talk to","isolated","no friends"],"Loneliness sounds like it is part of this, not just the topic you named."],
+    ["science",["science","astronomy","stars","universe","evolution","origins","big bang","ai","artificial intelligence","machines","technology"],"How faith, science, and increasingly capable machines fit together sounds like the question you are working through."],
+    ["creation",["creation","created","nature","sky","night sky"],"Creation, and what it means to look at it honestly, sounds like part of what you are noticing."],
+    ["purpose",["purpose","meaning","why am i here","direction in life","calling","what is my purpose"],"Purpose, and what a faithful next step looks like, sounds like the deeper question here."],
+    ["hope",["hopeless","hope","give up","giving up","despair"],"Holding on to hope when it feels thin sounds like what you are asking about."],
+    ["love",["love","loved","loving"],"Love, what it requires, and where it falls short, sounds like it is at the heart of this."],
+    ["prayer",["pray","prayer","praying"],"Prayer, and what it is like when it feels dry or uncertain, sounds like part of this."],
+    ["rest",["tired","exhausted","rest","burned out","burnt out"],"Rest, real rest and not just stopping for a moment, sounds like something you need."],
+    ["justice",["justice","unfair","injustice","oppression"],"Justice, and what is fair and merciful at the same time, sounds like the tension here."],
+    ["strength",["weak","strength","cannot go on","keep going"],"Strength to keep going, and where it comes from, sounds like what you are asking about."]
+  ];
+  var INTERPRETATIONS = {
+    "forgiveness": "Interpretation, not Scripture: in many Christian traditions, forgiveness is described as releasing a debt and refusing to carry revenge as a way of life. It does not require reconciliation, restored access, or continued contact. Boundaries and accountability can remain, and in unsafe situations they should. Other traditions frame this differently, and people disagree in good faith about how forgiveness and reconciliation relate. You are free to weigh that for yourself.",
+    "grief": "Interpretation, not Scripture: grief is often described in Scripture and in pastoral care as something to be carried, not fixed on a schedule. A passage about comfort does not mean the pain is small, or that faith removes it.",
+    "anxiety": "Interpretation, not Scripture: passages about worry are often read as an invitation to bring concerns into prayer, not as a diagnosis and not as a claim that anxiety is a spiritual failure. Persistent distress is a reason to seek professional and community support, not a reason for shame.",
+    "fear": "Interpretation, not Scripture: 'do not fear' passages are often read as reassurance in the presence of fear, not as a command to never feel afraid. Fear can also be useful information, especially when a situation is unsafe.",
+    "doubt": "Interpretation, not Scripture: doubt is treated very differently across traditions. Some see it as a normal part of faith, some as a stage to work through, and some as something to confess. This companion does not treat doubt as evidence that you are spiritually deficient.",
+    "decision": "Interpretation, not Scripture: discernment is often described as slower than advice. It can include Scripture, counsel from trusted people, attention to consequences, and time. No passage on its own settles a personal decision for you, and I will not claim to know what you should choose.",
+    "conflict": "Interpretation, not Scripture: peacemaking in Scripture is often paired with honesty, not with avoiding hard truths or with restoring contact at any cost. A soft answer and a firm boundary can belong in the same conversation.",
+    "complaining": "Interpretation, not Scripture: passages about complaining are often read as an invitation to notice what is underneath a complaint, not as a ban on honest lament or on naming a real problem. Scripture also includes laments and honest complaints to God. The difference people often draw is between a complaint that names something true and seeks a next step, and a complaint that only circles. Feeling tired or frustrated is not, on its own, a spiritual failure.",
+    "lust": "Interpretation, not Scripture: this passage is often read as saying temptation is common, not unique to you, and that there is a way through it, not as a claim that feeling desire makes you spiritually deficient. Desire is treated in Scripture in different ways, and a single passage does not settle a personal struggle on its own. If a pattern of behavior is causing real distress or harm, professional and trusted community support can help alongside reflection here, and this companion does not diagnose anything.",
+    "science": "Interpretation, not Scripture: faith and scientific inquiry are held together by some people and kept in separate domains by others. A scientific account of how something works does not, on its own, prove or disprove a theological claim, and a theological claim does not, on its own, settle a scientific question.",
+    "creation": "Interpretation, not Scripture: passages about the heavens are poetry and wonder as well as theology. They can sit alongside astronomy without being used as a scientific textbook, and astronomy can be studied seriously without being treated as a threat to faith."
+  };
+  var LENSES_TEXT = "Five lenses, used only when relevant and labeled here as product lenses, not as Scripture:\n1. Text: what the passage actually says, in the translation named.\n2. History and context: when and for whom it was written, as far as that is known.\n3. Interpretive traditions: how different Christian traditions have read it, where they agree and disagree.\n4. Science and reason: what can be examined, tested, or reasoned about, without manufacturing proof.\n5. Personal discernment: what this might mean for your own conscience and next step, which only you can decide.";
+  function titleCase(s){ return s.replace(/\b\w/g, function(c){ return c.toUpperCase(); }); }
+  function cleanRange(s){ return s.replace(/\s+/g, ''); }
+  function canonicalRef(raw){
+    var m151 = raw.match(/\bPsalm\s+151\s*:\s*(\d+(?:\s*-\s*\d+)?)\b/i);
+    if (m151) return 'Psalm 151:' + cleanRange(m151[1]);
+    var i, m, book;
+    for (i = 0; i < MULTIWORD.length; i++){
+      book = MULTIWORD[i];
+      m = raw.match(new RegExp('\\b' + book.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+(\\d+)\\s*:\\s*(\\d+(?:\\s*-\\s*\\d+)?)\\b', 'i'));
+      if (m) return book + ' ' + m[1] + ':' + cleanRange(m[2]);
+    }
+    m = raw.match(/\b([1-3]?\s*[A-Za-z]+)\s+(\d+)\s*:\s*(\d+(?:\s*-\s*\d+)?)\b/);
+    if (!m) return raw.trim();
+    var bookRaw = m[1].trim().toLowerCase().replace(/\s+/g, ' ');
+    var canonBook = ALIASES[bookRaw] || titleCase(m[1].trim());
+    return canonBook + ' ' + m[2] + ':' + cleanRange(m[3]);
+  }
+  function extractRef(text){
+    var m151 = text.match(/\bPsalm\s+151\s*:\s*(\d+(?:\s*-\s*\d+)?)\b/i);
+    if (m151) return 'Psalm 151:' + cleanRange(m151[1]);
+    var i, m, book;
+    for (i = 0; i < MULTIWORD.length; i++){
+      book = MULTIWORD[i];
+      m = text.match(new RegExp('\\b' + book.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+(\\d+)\\s*:\\s*(\\d+(?:\\s*-\\s*\\d+)?)\\b', 'i'));
+      if (m) return book + ' ' + m[1] + ':' + cleanRange(m[2]);
+    }
+    m = text.match(/\b([1-3]?\s*[A-Za-z]+)\s+(\d+)\s*:\s*(\d+(?:\s*-\s*\d+)?)\b/);
+    if (!m) return null;
+    return canonicalRef(m[0]);
+  }
+  function canonFor(book){
+    if (book === 'Susanna' || book === 'Bel and the Dragon') return 'deuterocanonical';
+    if (book === 'Letter of Jeremiah') return 'deuterocanonical';
+    var e = ETH[book];
+    return e ? e[0] : 'shared';
+  }
+  function getEth(ref){
+    var canonRef = canonicalRef(ref);
+    if (canonRef.indexOf('Psalm 151:') === 0){
+      var range = canonRef.split(':')[1];
+      var bookData = ETH['Psalm 151'];
+      if (!bookData) return null;
+      if (range.indexOf('-') !== -1){
+        var parts = range.split('-'), s = parseInt(parts[0], 10), en = parseInt(parts[1], 10), out = [];
+        for (var v = s; v <= en; v++){
+          var t = bookData[1]['1'] && bookData[1]['1'][String(v)];
+          if (!t) return null;
+          out.push(t);
+        }
+        return {display: canonRef, text: out.join(' '), canon: 'deuterocanonical'};
+      }
+      var single = bookData[1]['1'] && bookData[1]['1'][range];
+      if (!single) return null;
+      return {display: canonRef, text: single, canon: 'deuterocanonical'};
+    }
+    var m = canonRef.match(/^(.+?) (\d+):(\d+)(?:-(\d+))?$/);
+    if (!m) return null;
+    var book = m[1], chapter = m[2], start = parseInt(m[3], 10), end = m[4] ? parseInt(m[4], 10) : null;
+    var targetBook = book, targetChapter = chapter;
+    if (CHAPTER_ALIASES[book]){
+      targetBook = CHAPTER_ALIASES[book][0];
+      targetChapter = (chapter === '1') ? String(CHAPTER_ALIASES[book][1]) : chapter;
+    }
+    var data = ETH[targetBook];
+    if (!data || !data[1][targetChapter]) return null;
+    if (end !== null){
+      var arr = [];
+      for (var vv = start; vv <= end; vv++){
+        var tt = data[1][targetChapter][String(vv)];
+        if (!tt) return null;
+        arr.push(tt);
+      }
+      return {display: canonRef, text: arr.join(' '), canon: canonFor(book)};
+    }
+    var txt = data[1][targetChapter][String(start)];
+    if (!txt) return null;
+    return {display: canonRef, text: txt, canon: canonFor(book)};
+  }
+  function scriptureSections(ref){
+    var found = getEth(ref);
+    if (!found) return null;
+    var canonNote = {
+      'shared': 'Canon: shared, in both the Ethiopian Orthodox canon and the 66-book KJV canon.',
+      'deuterocanonical': 'Canon: deuterocanonical, in Orthodox canons, not in the 66-book KJV canon.',
+      'ethiopian-only': 'Canon: Ethiopian-only, in the Ethiopian Orthodox canon, not in the Protestant or Catholic canons in that form.'
+    }[found.canon] || ('Canon: ' + found.canon + '.');
+    var sections = [['Scripture (' + ETH_TRANSLATION + ')', '"' + found.text + '"\n- ' + found.display + '\n' + canonNote]];
+    var kjv = KJV[canonicalRef(ref)];
+    if (kjv){
+      sections.push(['King James Version (parallel, not merged)', '"' + kjv + '"\n- ' + canonicalRef(ref)]);
+    } else if (found.canon === 'shared'){
+      sections.push(['King James Version (parallel)', 'Not yet loaded for this passage. The KJV starter corpus has only 53 passages, so a missing parallel does not mean the passage is not in the KJV canon. The Ethiopian text above is the foundation, and no wording has been merged between editions.']);
+    } else {
+      sections.push(['King James Version (parallel)', 'No parallel in the 66-book KJV canon for this passage.']);
+    }
+    return sections;
+  }
+  function topicsForRef(ref){
+    return TOPICMAP[canonicalRef(ref)] || [];
+  }
+  function verseForTopic(topic){
+    var books = Object.keys(ETH);
+    for (var bi = 0; bi < books.length; bi++){
+      var book = books[bi], chapters = ETH[book][1];
+      var chNums = Object.keys(chapters).map(Number).sort(function(a,b){return a-b;});
+      for (var ci = 0; ci < chNums.length; ci++){
+        var ch = String(chNums[ci]), verses = chapters[ch];
+        var vNums = Object.keys(verses).map(Number).sort(function(a,b){return a-b;});
+        for (var vi = 0; vi < vNums.length; vi++){
+          var v = String(vNums[vi]);
+          var ref = (book === 'Psalm 151') ? ('Psalm 151:' + v) : (book + ' ' + ch + ':' + v);
+          var topics = TOPICMAP[ref] || [];
+          if (topics.indexOf(topic) !== -1) return ref;
+        }
+      }
+    }
+    return null;
+  }
+  function detectCrisis(text){
+    var low = text.toLowerCase();
+    return CRISIS_PATTERNS.some(function(p){ return p.test(low); });
+  }
+  function detectTopic(text){
+    var low = text.toLowerCase();
+    for (var i = 0; i < TOPICS.length; i++){
+      var t = TOPICS[i];
+      for (var j = 0; j < t[1].length; j++){
+        // Word boundaries, not substrings. The old substring check made
+        // "ai" match "said", "faith", and "again", so almost every
+        // sentence was misread as the science topic.
+        var escaped = t[1][j].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (new RegExp('\\b' + escaped + '\\b').test(low)) return {topic: t[0], reflection: t[2]};
+      }
+    }
+    return null;
+  }
+  function isVerseRequest(low){
+    if (low.indexOf("don't want") !== -1 || low.indexOf('do not want') !== -1 || low.indexOf('no passage') !== -1 || low.indexOf('not a passage') !== -1) return false;
+    if (['yes','sure','ok','okay','please','show me','go ahead','yes please','passage please','verse please'].indexOf(low.trim()) !== -1) return true;
+    var phrases = ['show me a verse','show me a passage','give me a verse','give me a passage','find a passage','find a verse','find me a passage','find me a verse','show me scripture','show me a scripture','look at a retrieved passage','look at a passage','a passage together','a verse about this','verse about this','passage about this','show me one'];
+    for (var i = 0; i < phrases.length; i++){ if (low.indexOf(phrases[i]) !== -1) return true; }
+    return false;
+  }
+  function aboutMismatch(low){
+    if (low.indexOf('about') === -1) return null;
+    var cleaned = low.trim().replace(/\s+please\s*$/, '');
+    var m = cleaned.match(/\babout\s+([a-z]+(?:\s+[a-z]+)?)\s*$/);
+    if (!m) return null;
+    var target = m[1].trim();
+    if (['this','that','it','this topic','that topic'].indexOf(target) !== -1) return null;
+    for (var i = 0; i < TOPICS.length; i++){
+      for (var j = 0; j < TOPICS[i][1].length; j++){
+        var escaped = TOPICS[i][1][j].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (new RegExp('\\b' + escaped + '\\b').test(target)) return null;
+      }
+    }
+    return target;
+  }
+  function genericInterpretation(){
+    return 'No specific interpretive note is attached to this passage in this prototype. Readings differ across Christian traditions, and a single passage does not settle a personal question on its own. Any reading offered here is interpretation, not part of the quoted text.';
+  }
+  var state = {turns: 0, history: [], lastTopic: null, lastReflection: null, paused: false, mentalNoteGiven: false, offeredScripture: false};
+  function resetState(){ state = {turns: 0, history: [], lastTopic: null, lastReflection: null, paused: false, mentalNoteGiven: false, offeredScripture: false}; }
+  function finish(sections, pauseOffered, scriptureRef){
+    var lowHistory = state.history.slice(-3).map(function(h){ return h.toLowerCase(); }).join(' ');
+    if (!state.mentalNoteGiven && ['depress','anxiety','panic','mental illness','therapist','counselor'].some(function(w){ return lowHistory.indexOf(w) !== -1; })){
+      sections.push(['Care note (not a diagnosis)', 'I am not diagnosing anything, and mental distress is not a spiritual failure. If distress persists, please consider professional care and trusted people around you, alongside any reflection here.']);
+      state.mentalNoteGiven = true;
+    }
+    if (pauseOffered){
+      sections.push(['Sacred Pause (optional)', 'You can choose, with no pressure and no judgment attached to any choice:\n- Continue the conversation\n- Take a moment to reflect or pray\n- Pause and return later\nI do not pray on your behalf, and continuing is not spiritually superior to pausing.']);
+    }
+    return {sections: sections, crisis: false, pause: !!pauseOffered, scriptureRef: scriptureRef || null};
+  }
+  function info(body, pauseOffered){
+    return {sections: [['', body]], crisis: false, pause: !!pauseOffered, scriptureRef: null};
+  }
+  function respond(userText){
+    var text = (userText || '').trim();
+    var low = text.toLowerCase();
+    state.history.push(text);
+    if (low === '/help' || low === 'help' || low === '/commands'){
+      return info('Commands you can use:\n/verse John 3:16 - retrieve a passage by reference, if it is in the local corpus\n/edition - show the foundation edition, KJV parallel, and canon labels\n/lenses - show the five lenses used here\n/pause - take a Sacred Pause\n/continue - continue the conversation\n/privacy - how this phone file handles your words\n/reset - clear this session only\n\nThe foundation is the Ethiopian Orthodox Bible, in a modern English compilation rooted in the Septuagint and Ge\'ez tradition. King James is shown only as a separate parallel, never merged into Ethiopian text. You can also just talk. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage.');
+    }
+    if (low === '/edition' || low === 'edition'){
+      return info('Phone version v1.2.3.\nFoundation edition: Ethiopian Orthodox Bible, modern English compilation rooted in the Septuagint and Ge\'ez tradition. This file is a modern compilation, not an ancient manuscript itself.\nEthiopian passages in this build: ' + verseCount + ' unique verses in this phone file, plus chapter-1 aliases for Susanna, Bel, and Letter of Jeremiah in the desktop version.\nKing James parallel passages in this build: ' + Object.keys(KJV).length + '\nCanon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), deuterocanonical (in Orthodox canons, not in the 66-book canon), and ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\nSusanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, and the Song of the Three Children as Daniel 3:24-97, as in the PDF. You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, and I will map those to the corpus chapters.');
+    }
+    if (low === '/privacy' || low === 'privacy'){
+      return info('Privacy, phone version, stated honestly: this file runs entirely in your browser, on your device. There is no server, no account, no network call, and nothing is sent anywhere. Your conversation lives only in this page, in memory. Closing or reloading the page, or using Clear this session, clears it. Nothing is written to a file by this page. This is not a diagnosis, counseling, or pastoral care tool, and it does not claim encryption or deletion it does not have, because there is no stored conversation to delete.');
+    }
+    if (low === '/lenses' || low === 'lenses') return info(LENSES_TEXT);
+    if (low === '/reset' || low === 'reset'){
+      resetState();
+      return info('Session cleared. We can start fresh, whenever you are ready.');
+    }
+    if (low === '/pause' || low === 'pause' || low === 'pause and return later' || low === 'take a moment to reflect or pray'){
+      state.paused = true;
+      return info('Paused. There is no pressure to return at a particular time, and nothing is tracked about this pause. When you are ready, type /continue, or just write again.');
+    }
+    if (low === '/continue' || low === 'continue the conversation'){
+      state.paused = false;
+      return info('Continuing. What would you like to explore next?');
+    }
+    if (detectCrisis(text)){
+      return {sections: [['', CRISIS_TEXT]], crisis: true, pause: false, scriptureRef: null};
+    }
+    if (/\bare you (god|jesus|a prophet|christ)\b/.test(low) || /\bdo you claim to be\b/.test(low)){
+      return info(IDENTITY_TEXT);
+    }
+    if (low.indexOf('here is a verse') !== -1 || low.indexOf('my verse is') !== -1 || low.indexOf('use this verse') !== -1){
+      var supplied = text.replace(/^(here is a verse|my verse is|use this verse)[:\s]*/i, '').trim();
+      state.turns++;
+      return finish([
+        ['Reflection', 'Thank you for bringing that text in. Let me reflect on what you shared, rather than replacing it with a passage from my corpus.'],
+        ['User-supplied text (not retrieved from the local corpus)', supplied || '(no text was included after your note)'],
+        ['Interpretation (not Scripture)', 'Any reading I offer here is interpretation, and it is yours to test against the text, your conscience, and people you trust. What part of this passage stands out to you, and why?']
+      ], true);
+    }
+    var ref = extractRef(text);
+    var explicitVerseAsk = !!ref || isVerseRequest(low) || low.indexOf('quote') !== -1;
+    if (ref){
+      var found = scriptureSections(ref);
+      state.turns++;
+      if (!found){
+        return finish([
+          ['Reflection', 'I looked for that passage in the local corpus, and I could not retrieve it.'],
+          ['Not retrieved', 'I do not have ' + canonicalRef(ref) + ' in the Ethiopian corpus, so I will not quote it from memory. You can paste the passage yourself and I will work with it as user-supplied text, or I can offer a summary labeled as a summary, not as a quotation.'],
+          ['Question', 'Would you like to paste the passage, or explore a nearby topic from the passages I do have?']
+        ], false);
+      }
+      var firstRef = canonicalRef(ref);
+      var topics = topicsForRef(firstRef);
+      if (!topics.length && firstRef.indexOf('-') !== -1){
+        var base = firstRef.split('-')[0];
+        // base may be "Psalm 121:1" already for a range like 121:1-2
+        topics = topicsForRef(base);
+        if (!topics.length){
+          var bookChapter = firstRef.split(':')[0];
+          topics = topicsForRef(bookChapter + ':1');
+        }
+      }
+      var topic = null;
+      for (var ti = 0; ti < topics.length; ti++){ if (INTERPRETATIONS[topics[ti]]){ topic = topics[ti]; break; } }
+      var sections = [['Reflection', 'Here is the passage you asked for, kept separate from any interpretation that follows.']];
+      sections = sections.concat(found);
+      sections.push(['Interpretation (not Scripture)', topic ? INTERPRETATIONS[topic] : genericInterpretation()]);
+      sections.push(['Question', 'What stands out to you in this passage, and what would you like to sit with or question about it?']);
+      return finish(sections, true, canonicalRef(ref));
+    }
+    var foundTopic = detectTopic(text);
+    if (foundTopic){ state.lastTopic = foundTopic.topic; state.lastReflection = foundTopic.reflection; }
+    if (low.indexOf('say more') !== -1){
+      state.turns++;
+      return finish([
+        ['Reflection', 'Take your time, I am listening.'],
+        ['Question', 'What part of this feels heaviest, or most unresolved, right now?']
+      ], false);
+    }
+    if (low.indexOf('pause here') !== -1){
+      state.paused = true;
+      return info('Paused. There is no pressure to return at a particular time, and nothing is tracked about this pause. When you are ready, type /continue, or just write again.');
+    }
+    if (isVerseRequest(low) && state.lastTopic){
+      var mismatch = aboutMismatch(low);
+      if (mismatch){
+        state.turns++;
+        return finish([
+          ['Reflection', 'I do not have a retrieved passage specifically tagged for ' + mismatch + ' in the local corpus, so I will not substitute a passage from an earlier topic.'],
+          ['Question', 'Would you like to talk through ' + mismatch + ' itself, or give me a reference to look up?']
+        ], false);
+      }
+      var topicV = state.lastTopic;
+      var verseRefV = verseForTopic(topicV);
+      state.turns++;
+      if (!verseRefV){
+        return finish([
+          ['Reflection', 'I do not have a retrieved passage for that topic in the local corpus, so I will not invent one.'],
+          ['Question', 'Would you like to talk through the question itself, or paste a passage you want to reflect on?']
+        ], false);
+      }
+      var sV = [['Reflection', state.lastReflection || 'Here is a retrieved passage on that topic.']];
+      sV = sV.concat(scriptureSections(verseRefV) || []);
+      sV.push(['Interpretation (not Scripture)', INTERPRETATIONS[topicV] || genericInterpretation()]);
+      sV.push(['Question', 'What do you notice in that passage, and what do you disagree with or want to push back on?']);
+      return finish(sV, true, verseRefV);
+    }
+    if (isVerseRequest(low)){
+      state.turns++;
+      return finish([
+        ['Reflection', 'I would like to find a passage for you, but I do not have a topic from our conversation yet to pick one from.'],
+        ['Question', 'Could you say what it is about, or give me a reference like John 3:16?']
+      ], false);
+    }
+    if (state.turns === 0 && !explicitVerseAsk){
+      state.turns++;
+      var reflection = foundTopic ? foundTopic.reflection : 'Thank you for sharing that. I want to understand what you are actually carrying before I offer anything from Scripture.';
+      state.offeredScripture = true;
+      return finish([
+        ['Reflection', reflection],
+        ['Question', 'Could you say a little more about what part of this feels heaviest, or most unresolved, right now?'],
+        ['Note', 'I have not quoted a passage yet on purpose. If you would like one, tell me a reference, or say \'show me a verse about this\', and I will retrieve one and keep it separate from interpretation.']
+      ], false);
+    }
+    if (['yes','sure','ok','okay','please','show me','go ahead','yes please'].indexOf(low.trim()) !== -1 && state.lastTopic){
+      var topic2 = state.lastTopic;
+      var verseRef = verseForTopic(topic2);
+      state.turns++;
+      if (!verseRef){
+        return finish([
+          ['Reflection', 'I do not have a retrieved passage for that topic in the local corpus, so I will not invent one.'],
+          ['Question', 'Would you like to talk through the question itself, or paste a passage you want to reflect on?']
+        ], false);
+      }
+      var s2 = [['Reflection', state.lastReflection || 'Here is a retrieved passage on that topic.']];
+      s2 = s2.concat(scriptureSections(verseRef) || []);
+      s2.push(['Interpretation (not Scripture)', INTERPRETATIONS[topic2] || genericInterpretation()]);
+      s2.push(['Question', 'What do you notice in that passage, and what do you disagree with or want to push back on?']);
+      return finish(s2, true, verseRef);
+    }
+    if (foundTopic){
+      var topic3 = foundTopic.topic, reflection3 = foundTopic.reflection;
+      var verseRef3 = verseForTopic(topic3);
+      state.turns++;
+      var s3 = [['Reflection', reflection3]];
+      if (verseRef3){
+        s3 = s3.concat(scriptureSections(verseRef3) || []);
+        s3.push(['Interpretation (not Scripture)', INTERPRETATIONS[topic3] || genericInterpretation()]);
+      } else {
+        s3.push(['Note', 'I do not have a retrieved passage for that topic in the local corpus, so I will not invent one.']);
+      }
+      s3.push(['Question', 'Does that reflection match what you meant, or is there a part I missed? You are free to disagree.']);
+      return finish(s3, true, verseRef3);
+    }
+    if (/\bai\b/.test(low) || low.indexOf('artificial intelligence') !== -1){
+      state.turns++;
+      return finish([
+        ['Reflection', 'You are asking about machines that can imitate understanding, and what that means for being human. That is a serious question, and it does not have a single settled theological answer.'],
+        ['Note on lenses', 'Text, history, traditions, science, and personal discernment can each add something here, but none of them manufactures scientific proof of a religious claim. What concerns you most: what machines can do, what they should not be trusted with, or what they reveal about us?'],
+        ['Question', 'Which of those feels most urgent to you right now?']
+      ], true);
+    }
+    if (low.indexOf('only friend') !== -1 || low.indexOf('only person i') !== -1 || low.indexOf('you are all i have') !== -1){
+      state.turns++;
+      return finish([
+        ['Reflection', 'I hear how alone that can feel, and I am glad you are talking about it here.'],
+        ['Important note', 'I am not a substitute for human community, and I do not want to become your exclusive confidant. If there is a trusted person, community, or clergy member you can talk with, even briefly, that matters more than a longer conversation with me. I can stay in this conversation, but I should not replace those relationships.'],
+        ['Question', 'Is there someone, even one person, you feel even a little safe talking with about this?']
+      ], true);
+    }
+    if (low.indexOf('disagree') !== -1 || low.indexOf("don't agree") !== -1 || low.indexOf('do not agree') !== -1 || low.indexOf('not convinced') !== -1){
+      state.turns++;
+      return finish([
+        ['Reflection', 'Thank you for saying that plainly. Disagreement is welcome here, and it is not treated as a spiritual failure.'],
+        ['Question', 'Which part do you disagree with most, the passage itself, the interpretation I offered, or something else? I would rather understand your reading than defend mine.']
+      ], false);
+    }
+    state.turns++;
+    return finish([
+      ['Reflection', 'I hear you, and I do not want to rush past what you just said into advice or a passage.'],
+      ['Question', 'What would be most useful right now: to say more about this, to look at a retrieved passage together, or to pause here?']
+    ], false);
+  }
+  // Expose for Node testing, when document is not a full browser.
+  if (typeof module !== 'undefined' && module.exports){
+    module.exports = {respond: respond, extractRef: extractRef, canonicalRef: canonicalRef, getEth: getEth, scriptureSections: scriptureSections, verseForTopic: verseForTopic, resetState: resetState, state: state};
+  }
+  if (typeof document !== 'undefined' && document.getElementById && document.getElementById('chat')){
+    var chat = document.getElementById('chat');
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function renderSections(sections){
+      return sections.map(function(pair){
+        var label = pair[0], body = pair[1];
+        var safe = escapeHtml(body).replace(/\n/g, '<br>');
+        var cls = label.indexOf('Scripture') === 0 ? 'scripture' : '';
+        if (!label) return '<div class="' + cls + '">' + safe + '</div>';
+        return '<div class="section-label">' + escapeHtml(label) + '</div><div class="' + cls + '">' + safe + '</div>';
+      }).join('');
+    }
+    function addMessage(who, sections, opts){
+      opts = opts || {};
+      var div = document.createElement('div');
+      div.className = 'msg' + (who === 'You' ? ' you' : '') + (opts.crisis ? ' crisis' : '');
+      div.innerHTML = '<div class="who">' + who + '</div>' + renderSections(sections);
+      if (opts.pause){
+        var wrap = document.createElement('div');
+        wrap.className = 'pause';
+        ['Continue the conversation','Take a moment to reflect or pray','Pause and return later'].forEach(function(choice){
+          var b = document.createElement('button');
+          b.type = 'button'; b.textContent = choice;
+          b.onclick = function(){ send(choice); };
+          wrap.appendChild(b);
+        });
+        div.appendChild(wrap);
+      }
+      chat.appendChild(div);
+      div.scrollIntoView({behavior: 'smooth', block: 'end'});
+    }
+    function send(text){
+      var message = (text !== undefined && text !== null ? text : input.value).trim();
+      if (!message) return;
+      input.value = '';
+      addMessage('You', [['', message]]);
+      var result;
+      if (message === '/reset'){
+        resetState();
+        addMessage('Christ Bot', [['', 'Session cleared. We can start fresh, whenever you are ready.']], {});
+        return;
+      }
+      result = respond(message);
+      addMessage('Christ Bot', result.sections, {crisis: result.crisis, pause: result.pause});
+    }
+    form.addEventListener('submit', function(e){ e.preventDefault(); send(); });
+    document.querySelectorAll('[data-cmd]').forEach(function(b){ b.addEventListener('click', function(){ send(b.dataset.cmd); }); });
+    addMessage('Christ Bot', [['', 'Welcome. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage. What is on your mind?']], {});
+    if (input.focus) input.focus();
+  }
+})();
+</script>
+</body>
+</html>

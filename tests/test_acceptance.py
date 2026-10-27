@@ -1,4 +1,4 @@
-"""Acceptance tests for Christ Bot v1.2, mapped to the handoff's 11 tests
+"""Acceptance tests for Christ Bot v1.2.3, mapped to the handoff's 11 tests
 plus dual-edition safeguards.
 
 Run: python3 -m unittest discover -s tests -v
@@ -163,6 +163,70 @@ class TestAcceptance(unittest.TestCase):
         self.assertIn("Ethiopian Orthodox Bible", r["text"])
         self.assertIn("modern English compilation", r["text"])
         self.assertIn("not an ancient manuscript", r["text"])
+
+    def test_19_topic_words_are_not_substring_matches(self):
+        # Regression: "ai" as a substring matched "said", "faith", and
+        # "again", so almost every sentence was misread as science.
+        for msg in ("I said I am tired", "faith is hard", "again, I feel lost"):
+            s = fresh()
+            r = respond(s, msg)
+            self.assertNotIn("increasingly capable machines", r["text"])
+        s = fresh()
+        r = respond(s, "I am thinking about AI")
+        self.assertIn("increasingly capable machines", r["text"])
+
+    def test_20_complaining_gets_its_own_passage_not_science(self):
+        # Regression: "complaining" and "complaints" contain "ai", so the
+        # old substring matcher read them as science and gave Genesis 1:1.
+        s = fresh()
+        r = respond(s, "I am tired of complaints")
+        self.assertNotIn("increasingly capable machines", r["text"])
+        self.assertIn("complaint", r["text"].lower())
+        r2 = respond(s, "scripture and guidance on complaining")
+        self.assertIn("Philippians 2:14", r2["text"])
+        self.assertIn("without complaining", r2["text"])
+        self.assertNotIn("In the beginning, God created", r2["text"])
+
+    def test_21_verse_request_after_listening_gives_a_passage(self):
+        # Regression: "show me a verse about this", "find a passage
+        # please", and "to look at a retrieved passage together" all fell
+        # through to the generic turn, which offered the same options again.
+        s = fresh()
+        respond(s, "I'm tired of being present and working everyday.")
+        r = respond(s, "Show me a verse about this")
+        self.assertIn("Psalm 23:1", r["text"])
+        self.assertNotIn("What would be most useful right now", r["text"])
+        s2 = fresh()
+        respond(s2, "I'm tired of being present and working everyday.")
+        r2 = respond(s2, "find a passage please")
+        self.assertIn("Psalm 23:1", r2["text"])
+        s3 = fresh()
+        respond(s3, "I'm tired of being present and working everyday.")
+        respond(s3, "What would be most useful right now?")
+        r3 = respond(s3, "to look at a retrieved passage together")
+        self.assertIn("Psalm 23:1", r3["text"])
+
+    def test_22_lust_topic_and_no_stale_passage(self):
+        # Regression: lust was not a topic, so "What about lust problems"
+        # and "more about lust" gave the generic turn, and "find a
+        # passage about lust" then silently reused the complaining passage.
+        s = fresh()
+        respond(s, "I need your help with the urge of complaining and people complaining around me")
+        respond(s, "Show me a verse about this please")
+        respond(s, "Take a moment to reflect or pray")
+        r = respond(s, "What about lust problems")
+        self.assertIn("lust", r["text"].lower())
+        self.assertNotIn("What would be most useful right now", r["text"])
+        r2 = respond(s, "find a passage about lust")
+        self.assertIn("1 Corinthians 10:13", r2["text"])
+        self.assertIn("No temptation has taken you", r2["text"])
+        self.assertNotIn("Philippians 2:14", r2["text"])
+        s2 = fresh()
+        respond(s2, "I need your help with the urge of complaining")
+        respond(s2, "Show me a verse about this please")
+        r3 = respond(s2, "find a passage about courage")
+        self.assertNotIn("Philippians 2:14", r3["text"])
+        self.assertIn("do not have a retrieved passage specifically tagged for courage", r3["text"])
 
 
 if __name__ == "__main__":

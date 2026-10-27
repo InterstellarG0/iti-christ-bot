@@ -1,5 +1,5 @@
 """
-Christ Bot v1.2 - core reflection engine.
+Christ Bot v1.2.3 - core reflection engine.
 
 Design choices, stated plainly:
 - This engine is deterministic and retrieval-only for Scripture. It does
@@ -151,6 +151,12 @@ TOPICS = [
     ("conflict", ["conflict", "argument", "fight with", "angry at", "angry",
                   "disagreement", "someone i love and"],
      "A conflict, and how to respond without doing more harm, sounds like what is on your mind."),
+    ("complaining", ["complain", "complaining", "complaints", "complaint",
+                      "grumble", "grumbling", "murmur", "murmuring"],
+     "Being tired of complaints, whether your own or other people's, sounds like what is weighing on you."),
+    ("lust", ["lust", "lustful", "lusting", "temptation", "tempted",
+              "porn", "pornography", "sexual desire"],
+     "Lust, and wanting help with it rather than just feeling ashamed about it, sounds like what you are bringing here."),
     ("loneliness", ["lonely", "loneliness", "alone", "no one to talk to",
                     "isolated", "no friends"],
      "Loneliness sounds like it is part of this, not just the topic you named."),
@@ -218,6 +224,23 @@ INTERPRETATIONS = {
         "Interpretation, not Scripture: peacemaking in Scripture is often paired with "
         "honesty, not with avoiding hard truths or with restoring contact at any cost. "
         "A soft answer and a firm boundary can belong in the same conversation."
+    ),
+    "complaining": (
+        "Interpretation, not Scripture: passages about complaining are often read as "
+        "an invitation to notice what is underneath a complaint, not as a ban on honest "
+        "lament or on naming a real problem. Scripture also includes laments and honest "
+        "complaints to God. The difference people often draw is between a complaint that "
+        "names something true and seeks a next step, and a complaint that only circles. "
+        "Feeling tired or frustrated is not, on its own, a spiritual failure."
+    ),
+    "lust": (
+        "Interpretation, not Scripture: this passage is often read as saying temptation "
+        "is common, not unique to you, and that there is a way through it, not as a claim "
+        "that feeling desire makes you spiritually deficient. Desire is treated in Scripture "
+        "in different ways, and a single passage does not settle a personal struggle on its "
+        "own. If a pattern of behavior is causing real distress or harm, professional and "
+        "trusted community support can help alongside reflection here, and this companion "
+        "does not diagnose anything."
     ),
     "science": (
         "Interpretation, not Scripture: faith and scientific inquiry are held together "
@@ -299,6 +322,8 @@ def load_corpus(path: Path | None = None) -> dict:
         "Psalm 151:7": ["hope", "strength"],
         "Jubilees 1:1": ["creation"],
         "Enoch 1:1": ["hope"],
+        "Philippians 2:14": ["complaining"],
+        "1 Corinthians 10:13": ["lust"],
     }
     for ref, topics in manual_topics.items():
         if ref in verses:
@@ -347,9 +372,62 @@ def detect_crisis(text: str) -> bool:
 def detect_topic(text: str) -> tuple[str, str] | None:
     low = text.lower()
     for topic, phrases, reflection in TOPICS:
-        if any(p in low for p in phrases):
-            return topic, reflection
+        for phrase in phrases:
+            # Word boundaries, not substrings. The old substring check made
+            # "ai" match "said", "faith", and "again", so almost every
+            # sentence was misread as the science topic.
+            if re.search(r"\b" + re.escape(phrase) + r"\b", low):
+                return topic, reflection
     return None
+
+
+def _is_verse_request(low: str) -> bool:
+    """True when the user is asking for a passage in general terms.
+
+    The old code only accepted exact one-word affirmations like "yes",
+    so "show me a verse about this", "find a passage please", and
+    "to look at a retrieved passage together" all fell through to the
+    generic turn, which then offered the same three options again in a loop.
+    """
+    if any(n in low for n in ("don't want", "do not want", "no passage", "not a passage")):
+        return False
+    if low.strip() in ("yes", "sure", "ok", "okay", "please", "show me",
+                        "go ahead", "yes please", "passage please", "verse please"):
+        return True
+    phrases = (
+        "show me a verse", "show me a passage", "give me a verse",
+        "give me a passage", "find a passage", "find a verse",
+        "find me a passage", "find me a verse", "show me scripture",
+        "show me a scripture", "look at a retrieved passage",
+        "look at a passage", "a passage together", "a verse about this",
+        "verse about this", "passage about this", "show me one",
+    )
+    return any(p in low for p in phrases)
+
+
+def _about_mismatch(low: str) -> str | None:
+    """Return the "about X" target if X is not a known topic, else None.
+
+    Without this, "find a passage about lust" before lust was a topic
+    silently returned the previous topic's passage, complaining, which
+    looked like the bot was ignoring the new question. "About this",
+    "about that", and "about it" mean the previous topic, so they are
+    not a mismatch.
+    """
+    if "about" not in low:
+        return None
+    cleaned = re.sub(r"\s+please\s*$", "", low.strip())
+    m = re.search(r"\babout\s+([a-z]+(?:\s+[a-z]+)?)\s*$", cleaned)
+    if not m:
+        return None
+    target = m.group(1).strip()
+    if target in ("this", "that", "it", "this topic", "that topic"):
+        return None
+    for _topic, phrases, _reflection in TOPICS:
+        for phrase in phrases:
+            if re.search(r"\b" + re.escape(phrase) + r"\b", target):
+                return None
+    return target
 
 
 def extract_ref(text: str) -> str | None:
@@ -590,7 +668,7 @@ def respond(session: Session, user_text: str) -> dict:
 
     # --- Explicit passage request ---
     ref = extract_ref(text)
-    explicit_verse_ask = bool(ref) or "give me a verse" in low or "quote" in low or "show me a verse" in low
+    explicit_verse_ask = bool(ref) or _is_verse_request(low) or "quote" in low
     if ref:
         found = _scripture_sections(session.corpus, ref)
         session.turns += 1
@@ -642,6 +720,55 @@ def respond(session: Session, user_text: str) -> dict:
         topic, reflection = found_topic
         session.last_topic = topic
         session.last_reflection = reflection
+
+    # --- Answers to the generic question, so it cannot loop ---
+    if "say more" in low:
+        session.turns += 1
+        return _finish(session, [
+            ("Reflection", "Take your time, I am listening."),
+            ("Question", "What part of this feels heaviest, or most unresolved, right now?"),
+        ], pause_offered=False)
+    if "pause here" in low or low.strip() in ("pause",):
+        session.paused = True
+        return _info(session, (
+            "Paused. There is no pressure to return at a particular time, and "
+            "nothing is tracked about this pause. When you are ready, type "
+            "/continue, or just write again."
+        ), pause_offered=False)
+
+    # --- General verse request: use the topic we already have ---
+    if _is_verse_request(low) and session.last_topic:
+        mismatch = _about_mismatch(low)
+        if mismatch:
+            session.turns += 1
+            return _finish(session, [
+                ("Reflection", f"I do not have a retrieved passage specifically tagged for {mismatch} in the local corpus, so I will not substitute a passage from an earlier topic."),
+                ("Question", f"Would you like to talk through {mismatch} itself, or give me a reference to look up?"),
+            ], pause_offered=False)
+        topic = session.last_topic
+        verse = _verse_for_topic(session.corpus, topic)
+        session.turns += 1
+        if not verse:
+            return _finish(session, [
+                ("Reflection", "I do not have a retrieved passage for that topic in the local corpus, so I will not invent one."),
+                ("Question", "Would you like to talk through the question itself, or paste a passage you want to reflect on?"),
+            ], pause_offered=False)
+        sections = [
+            ("Reflection", session.last_reflection or "Here is a retrieved passage on that topic."),
+        ]
+        sections.extend(_scripture_sections(session.corpus, verse["reference"]) or [])
+        if topic in INTERPRETATIONS:
+            sections.append(("Interpretation (not Scripture)", INTERPRETATIONS[topic]))
+        else:
+            sections.append(("Interpretation (not Scripture)", _generic_interpretation()))
+        sections.append(("Question", "What do you notice in that passage, and what do you disagree with or want to push back on?"))
+        return _finish(session, sections, pause_offered=True, scripture_ref=verse["reference"])
+    if _is_verse_request(low):
+        session.turns += 1
+        return _finish(session, [
+            ("Reflection", "I would like to find a passage for you, but I do not have a topic from our conversation yet to pick one from."),
+            ("Question", "Could you say what it is about, or give me a reference like John 3:16?"),
+        ], pause_offered=False)
 
     # --- Listening-first: first turn, no explicit scripture request ---
     if session.turns == 0 and not explicit_verse_ask:
@@ -697,7 +824,7 @@ def respond(session: Session, user_text: str) -> dict:
         return _finish(session, sections, pause_offered=True, scripture_ref=verse["reference"] if verse else None)
 
     # --- Science / AI discussion without manufactured proof ---
-    if "ai" in low or "artificial intelligence" in low:
+    if re.search(r"\bai\b", low) or "artificial intelligence" in low:
         session.turns += 1
         return _finish(session, [
             ("Reflection", "You are asking about machines that can imitate understanding, and what that means for being human. That is a serious question, and it does not have a single settled theological answer."),

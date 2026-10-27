@@ -1,4 +1,10 @@
-# Christ Bot v1.2 - Prototype
+# Christ Bot v1.2.3 - Prototype
+
+**v1.2.3, 2026-10-26:** adds a lust topic mapped to 1 Corinthians 10:13, with a non-shaming interpretation, and fixes a stale-topic bug: "find a passage about X" for an unknown X no longer silently reuses an earlier topic's passage, it says so plainly instead.
+
+**v1.2.2, 2026-10-26:** same Ethiopian foundation and corpus as v1.2, plus the v1.2.1 topic fix, plus a verse-request fix. "Show me a verse about this", "find a passage please", and "to look at a retrieved passage together" now actually retrieve a passage for the topic already discussed, instead of looping back to the generic question. Also adds a complaining topic mapped to Philippians 2:14.
+
+**v1.2.1, 2026-10-26:** same Ethiopian foundation and corpus as v1.2, with three fixes and one addition. Topic matching now uses whole words, so "ai" no longer matches "said", "faith", or "again". The phone version is included in `phone/`. `system_prompt.md` is corrected to v1.2.1 with the Ethiopian foundation, and a `.gitignore` keeps `__pycache__` out of the repo.
 
 **Interstellar Religious Initiative (IRI)**
 Flagship of Interstellar Technologies Initiative, LLC (ITI)
