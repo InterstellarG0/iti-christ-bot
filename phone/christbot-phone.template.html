@@ -73,7 +73,7 @@
   // count also includes alias keys, so report the corpus verse count
   // honestly as the number of unique verses in this file.
   var countsEl = document.getElementById('counts');
-  if (countsEl) countsEl.textContent = 'Phone version v1.2.3. Foundation: Ethiopian Orthodox Bible (' + bookCount + ' books, ' + verseCount + ' verses in this file), King James parallel: ' + Object.keys(KJV).length + ' passages. Works offline after download, no server.';
+  if (countsEl) countsEl.textContent = 'Phone version v1.2.4. Foundation: Ethiopian Orthodox Bible (' + bookCount + ' books, ' + verseCount + ' verses in this file), King James parallel: ' + Object.keys(KJV).length + ' passages. Works offline after download, no server.';
 
   var CRISIS_TEXT = "If you feel you may act on thoughts of harming yourself right now, please reach out for help immediately.\n\nIn the United States, call or text 988 to reach the Suicide and Crisis Lifeline. You can also text HOME to 741741 for the Crisis Text Line, or call 911 if you are in immediate danger.\nIf you are outside the United States, please contact your local emergency number or a trusted crisis service in your country, and consider telling a trusted person near you right now.\n\nI am pausing reflective conversation here so you can get real-world support. I am not a counselor or a replacement for professional care.";
   var IDENTITY_TEXT = "I am Christ Bot, a scripture-centered reflection companion built by the Interstellar Religious Initiative. I am software, not God, Jesus, a prophet, or a supernatural being. I do not know God's will for you, and I am not a replacement for clergy, a counselor, or your own conscience. You are free to disagree with anything I offer.";
@@ -88,12 +88,12 @@
     ["anxiety",["anxious","anxiety","worried","worry","stressed","overwhelmed","panic","can't sleep","cannot sleep"],"Anxiety and the weight of what is uncertain sound like they are close to the surface here."],
     ["fear",["afraid","fear","scared","frightened","terrified"],"Fear sounds like it is shaping how this feels right now."],
     ["doubt",["doubt","doubting","not sure i believe","struggling to believe","lost faith","questioning my faith","unbelief"],"Doubt, and wanting to be honest about it rather than pretend, sounds like the real question here."],
-    ["decision",["decision","decide","what should i do","choice","discern","discernment","crossroads"],"A decision you want to discern carefully, not rush, sounds like what is in front of you."],
+    ["decision",["decision","decide","what should i do","choice","crossroads"],"A decision you want to discern carefully, not rush, sounds like what is in front of you."],
     ["conflict",["conflict","argument","fight with","angry at","angry","disagreement","someone i love and"],"A conflict, and how to respond without doing more harm, sounds like what is on your mind."],
     ["complaining",["complain","complaining","complaints","complaint","grumble","grumbling","murmur","murmuring"],"Being tired of complaints, whether your own or other people's, sounds like what is weighing on you."],
     ["lust",["lust","lustful","lusting","temptation","tempted","porn","pornography","sexual desire"],"Lust, and wanting help with it rather than just feeling ashamed about it, sounds like what you are bringing here."],
     ["loneliness",["lonely","loneliness","alone","no one to talk to","isolated","no friends"],"Loneliness sounds like it is part of this, not just the topic you named."],
-    ["science",["science","astronomy","stars","universe","evolution","origins","big bang","ai","artificial intelligence","machines","technology"],"How faith, science, and increasingly capable machines fit together sounds like the question you are working through."],
+    ["science",["science","stars","universe","evolution","big bang","ai","artificial intelligence","machines","technology"],"How faith, science, and increasingly capable machines fit together sounds like the question you are working through."],
     ["creation",["creation","created","nature","sky","night sky"],"Creation, and what it means to look at it honestly, sounds like part of what you are noticing."],
     ["purpose",["purpose","meaning","why am i here","direction in life","calling","what is my purpose"],"Purpose, and what a faithful next step looks like, sounds like the deeper question here."],
     ["hope",["hopeless","hope","give up","giving up","despair"],"Holding on to hope when it feels thin sounds like what you are asking about."],
@@ -101,7 +101,37 @@
     ["prayer",["pray","prayer","praying"],"Prayer, and what it is like when it feels dry or uncertain, sounds like part of this."],
     ["rest",["tired","exhausted","rest","burned out","burnt out"],"Rest, real rest and not just stopping for a moment, sounds like something you need."],
     ["justice",["justice","unfair","injustice","oppression"],"Justice, and what is fair and merciful at the same time, sounds like the tension here."],
-    ["strength",["weak","strength","cannot go on","keep going"],"Strength to keep going, and where it comes from, sounds like what you are asking about."]
+    ["strength",["weak","strength","cannot go on","keep going"],"Strength to keep going, and where it comes from, sounds like what you are asking about."],
+    ["guilt",["guilt","guilty","shame","ashamed","shameful"],"Guilt and shame, and wanting to face them honestly rather than hide from them, sounds like what is weighing on you."],
+    ["envy",["envy","envious","jealous","jealousy"],"Envy and jealousy, and how they quietly shape how you see yourself and others, sounds like what is on your mind."],
+    ["pride",["pride","proud","arrogance","arrogant","boastful","bragging"],"Pride, and how it gets in the way of seeing clearly or asking for help, sounds like part of what you are noticing."],
+    ["addiction",["addiction","addicted","compulsive","compulsion","compulsive behavior","bad habit"],"A pattern you feel unable to stop, even when you want to, sounds like what you are carrying, and that deserves honesty without shame."],
+    ["anger",["anger","furious","rage","irritated","frustrated"],"Anger, and what to do with it before it does harm, sounds like what is close to the surface here."],
+    ["discernment",["discernment","discern"],"Discernment, and how to tell a wise next step from a merely loud one, sounds like what you are working through."],
+    ["community",["community","fellowship","congregation"],"Community, and whether you have people who really know you, sounds like part of what you are asking about."],
+    ["friendship",["friend","friends","friendship"],"Friendship, and what a faithful friend actually looks like, sounds like what is on your mind."],
+    ["mercy",["mercy","merciful","compassion","compassionate"],"Mercy, and what it means to receive it and to offer it, sounds like the tension here."],
+    ["comfort",["comfort","comforting","consolation"],"Comfort, and what actually helps when you are grieving or hurting, sounds like what you need."],
+    ["faith",["faith","faithful"],"Faith, and what it means to trust when you cannot see the whole picture, sounds like the question here."],
+    ["truth",["truth","honest","honesty"],"Truth, and how to tell what is true from what only sounds true, sounds like what you are working through."],
+    ["peace",["peace","peaceful","calm"],"Peace, and what it would take to feel settled rather than braced, sounds like what you are asking about."],
+    ["trust",["trust","trusting"],"Trust, and who or what you can actually rely on, sounds like the deeper question here."],
+    ["patience",["patience","patient","waiting"],"Patience, and waiting without giving up or forcing an answer, sounds like what you are learning."],
+    ["humility",["humility","humble","humbly"],"Humility, and how to see yourself honestly without shrinking or inflating, sounds like part of this."],
+    ["wisdom",["wisdom","wise"],"Wisdom, and how to choose well when the right step is not obvious, sounds like what you need."],
+    ["listening",["listening","listen"],"Listening, and whether anyone is really hearing you, or whether you are hearing well yourself, sounds like part of this."],
+    ["character",["character"],"Character, and what kind of person you are becoming in small choices, sounds like what is on your mind."],
+    ["help",["help","helping"],"Help, and where real help actually comes from when you cannot fix this alone, sounds like what you are asking about."],
+    ["freedom",["freedom","free","liberation"],"Freedom, and what it means to be free without being alone or unbound, sounds like the question here."],
+    ["future",["future","tomorrow"],"The future, and what to hope for when it feels uncertain, sounds like what is weighing on you."],
+    ["mission",["mission","missionary"],"Mission, and what you are actually called to do with your life, sounds like the deeper question here."],
+    ["dignity",["dignity","dignified"],"Dignity, and being made in God's image even when you feel small or used, sounds like what is at stake here."],
+    ["solitude",["solitude","alone time"],"Solitude, and whether being alone is restful or lonely for you right now, sounds like part of this."],
+    ["time",["time","season","seasons"],"Time, and how seasons change even when you want an answer now, sounds like what you are noticing."],
+    ["astronomy",["astronomy","astronomer","telescope"],"The stars and the sky, and what they say about scale and wonder, sounds like part of what you are noticing."],
+    ["origins",["origins","origin"],"Origins, and where everything, including you, actually comes from, sounds like the question here."],
+    ["life",["life","abundant life","meaning of life"],"Life, and what makes it feel full rather than just busy or thin, sounds like what you are asking about."],
+    ["money",["money","finances","financial","bills","debt","paycheck","work","working","job"],"Work, money, and financial stress, and how they press on everything else, sounds like what is weighing on you."]
   ];
   var INTERPRETATIONS = {
     "forgiveness": "Interpretation, not Scripture: in many Christian traditions, forgiveness is described as releasing a debt and refusing to carry revenge as a way of life. It does not require reconciliation, restored access, or continued contact. Boundaries and accountability can remain, and in unsafe situations they should. Other traditions frame this differently, and people disagree in good faith about how forgiveness and reconciliation relate. You are free to weigh that for yourself.",
@@ -114,7 +144,37 @@
     "complaining": "Interpretation, not Scripture: passages about complaining are often read as an invitation to notice what is underneath a complaint, not as a ban on honest lament or on naming a real problem. Scripture also includes laments and honest complaints to God. The difference people often draw is between a complaint that names something true and seeks a next step, and a complaint that only circles. Feeling tired or frustrated is not, on its own, a spiritual failure.",
     "lust": "Interpretation, not Scripture: this passage is often read as saying temptation is common, not unique to you, and that there is a way through it, not as a claim that feeling desire makes you spiritually deficient. Desire is treated in Scripture in different ways, and a single passage does not settle a personal struggle on its own. If a pattern of behavior is causing real distress or harm, professional and trusted community support can help alongside reflection here, and this companion does not diagnose anything.",
     "science": "Interpretation, not Scripture: faith and scientific inquiry are held together by some people and kept in separate domains by others. A scientific account of how something works does not, on its own, prove or disprove a theological claim, and a theological claim does not, on its own, settle a scientific question.",
-    "creation": "Interpretation, not Scripture: passages about the heavens are poetry and wonder as well as theology. They can sit alongside astronomy without being used as a scientific textbook, and astronomy can be studied seriously without being treated as a threat to faith."
+    "creation": "Interpretation, not Scripture: passages about the heavens are poetry and wonder as well as theology. They can sit alongside astronomy without being used as a scientific textbook, and astronomy can be studied seriously without being treated as a threat to faith.",
+    "guilt": "Interpretation, not Scripture: guilt can point to something real that needs repair, while shame can make a person hide. Traditions differ on how confession, repair, and forgiveness relate, but struggle is not, on its own, proof you are beyond grace. If guilt persists after repair, professional and trusted community support can help, and this companion does not diagnose anything.",
+    "envy": "Interpretation, not Scripture: envy is often described as comparison turned inward, noticing what others have and feeling diminished by it. Naming it honestly is different from being condemned for it, and traditions differ on whether the remedy is gratitude, contentment, or community.",
+    "pride": "Interpretation, not Scripture: pride is often described not as confidence, but as refusing to need help or to see yourself clearly. Humility, in this framing, is honest self-knowledge, not self-erasure, and grace is offered to the humble, not earned by performing humility.",
+    "addiction": "Interpretation, not Scripture: compulsive patterns are often described as a struggle between what a person wants and what they actually do, which is why willpower alone is a thin account of it. Accountability and compassion belong together here, and if a pattern causes real harm or distress, professional support and trusted people matter alongside reflection, not instead of it. This companion does not diagnose addiction.",
+    "anger": "Interpretation, not Scripture: anger is often treated as information, not as a sin in itself, and the question is what it leads you to do. A gentle answer and a firm boundary can belong in the same conversation, and traditions differ on how quickly anger should be expressed or set aside.",
+    "discernment": "Interpretation, not Scripture: discernment is often described as slower than advice, using Scripture, trusted counsel, attention to consequences, and time. A single passage does not settle a decision for you, and I will not claim to know what you should choose.",
+    "community": "Interpretation, not Scripture: community in Scripture is often described as mutual sharpening and bearing burdens, not as agreement on everything or as a place where you must hide struggle to belong.",
+    "friendship": "Interpretation, not Scripture: friendship is often described as a relationship where honesty and care go together, where a friend can challenge you without abandoning you, and where you can do the same.",
+    "mercy": "Interpretation, not Scripture: mercy is often described as receiving what you did not earn and offering it in turn, without erasing accountability or requiring unsafe reconciliation.",
+    "comfort": "Interpretation, not Scripture: comfort in Scripture is often described as presence in grief, not as a quick fix or a claim that pain is small. Being comforted does not mean the loss is gone.",
+    "faith": "Interpretation, not Scripture: faith is treated very differently across traditions, as trust, as belief, as faithfulness over time, or as all three together. Doubt and faith can coexist in a person's life, and this companion does not treat doubt as spiritual failure.",
+    "truth": "Interpretation, not Scripture: truth in Scripture is often tied to both honesty and freedom, not just to correct information. A claim can be factually right and still be used unkindly, and a feeling can be real without being a complete account of what is true.",
+    "peace": "Interpretation, not Scripture: peace is often described not as the absence of trouble, but as a settled trust in the midst of it. It is not a feeling you must manufacture, and its absence is not a spiritual failure.",
+    "trust": "Interpretation, not Scripture: trust is often built in small, tested steps, not by deciding once to trust everything. Broken trust can be repaired in some relationships and, in unsafe ones, boundaries are a form of care, not a failure of trust.",
+    "patience": "Interpretation, not Scripture: patience is often described as waiting with purpose, not as passive resignation. Seasons change, and waiting does not mean nothing is happening, though it can feel that way.",
+    "humility": "Interpretation, not Scripture: humility is often described as seeing yourself honestly, neither inflated nor erased, and as walking justly and mercifully rather than performing lowliness.",
+    "wisdom": "Interpretation, not Scripture: wisdom in Scripture is often described as a lamp for the next step, not as a map of the whole journey. It can include Scripture, counsel, and attention to consequences, and it grows with practice, not with certainty.",
+    "listening": "Interpretation, not Scripture: listening is often described as being swift to hear and slow to speak, which is harder than it sounds when you already have an answer ready. Being heard is itself a form of care.",
+    "character": "Interpretation, not Scripture: character is often described as the fruit of many small choices, not as a single dramatic decision. Love, joy, peace, and patience are described as fruit, not as traits you force by willpower alone.",
+    "help": "Interpretation, not Scripture: help in Scripture is often described as coming from outside yourself, not as a sign of failure for needing it. Asking for help, from God and from people, is treated as wisdom, not weakness.",
+    "freedom": "Interpretation, not Scripture: freedom in Scripture is often tied to truth, not just to doing whatever you want. Freedom can mean being free from a pattern that harms you, as well as free to choose well.",
+    "future": "Interpretation, not Scripture: the future in Scripture is often described as held in thoughts of peace, not of evil, which does not mean every outcome is guaranteed or that present hardship is small.",
+    "mission": "Interpretation, not Scripture: mission is often described as going and making disciples, which in practice can mean ordinary faithfulness in your own place, not only dramatic travel or public work.",
+    "dignity": "Interpretation, not Scripture: dignity in Scripture is often grounded in being made in God's image, which does not depend on usefulness, appearance, or achievement. That dignity is shared, not earned.",
+    "solitude": "Interpretation, not Scripture: solitude is often described as being still and knowing God, which is different from isolation. Solitude can restore, while isolation can deepen loneliness, and telling them apart matters.",
+    "time": "Interpretation, not Scripture: time in Scripture is often described in seasons, with a time for different purposes. That does not make waiting easy, but it does mean a hard season is not necessarily a permanent state.",
+    "astronomy": "Interpretation, not Scripture: the heavens are often described as declaring glory, which can sit alongside astronomy without being used as a scientific textbook. Wonder and study can belong together.",
+    "origins": "Interpretation, not Scripture: origins in Scripture are often described as God creating, which different traditions read in different ways alongside scientific accounts of how the universe developed. A theological claim about who creates does not, on its own, settle a scientific question about how.",
+    "life": "Interpretation, not Scripture: life in Scripture is often described as abundant, not just as survival or busyness. Abundance here is not a promise of wealth or ease, and its absence in a hard season is not a spiritual failure.",
+    "money": "Interpretation, not Scripture: money worries are often described as anxiety about real needs, food, clothing, housing, and bills, not as a lack of faith. Accountability about money and compassion for financial hardship belong together, and struggling financially does not automatically mean spiritual failure. If bills or debt are overwhelming, practical help from trusted people and services matters alongside reflection."
   };
   var LENSES_TEXT = "Five lenses, used only when relevant and labeled here as product lenses, not as Scripture:\n1. Text: what the passage actually says, in the translation named.\n2. History and context: when and for whom it was written, as far as that is known.\n3. Interpretive traditions: how different Christian traditions have read it, where they agree and disagree.\n4. Science and reason: what can be examined, tested, or reasoned about, without manufacturing proof.\n5. Personal discernment: what this might mean for your own conscience and next step, which only you can decide.";
   function titleCase(s){ return s.replace(/\b\w/g, function(c){ return c.toUpperCase(); }); }
@@ -302,7 +362,7 @@
       return info('Commands you can use:\n/verse John 3:16 - retrieve a passage by reference, if it is in the local corpus\n/edition - show the foundation edition, KJV parallel, and canon labels\n/lenses - show the five lenses used here\n/pause - take a Sacred Pause\n/continue - continue the conversation\n/privacy - how this phone file handles your words\n/reset - clear this session only\n\nThe foundation is the Ethiopian Orthodox Bible, in a modern English compilation rooted in the Septuagint and Ge\'ez tradition. King James is shown only as a separate parallel, never merged into Ethiopian text. You can also just talk. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage.');
     }
     if (low === '/edition' || low === 'edition'){
-      return info('Phone version v1.2.3.\nFoundation edition: Ethiopian Orthodox Bible, modern English compilation rooted in the Septuagint and Ge\'ez tradition. This file is a modern compilation, not an ancient manuscript itself.\nEthiopian passages in this build: ' + verseCount + ' unique verses in this phone file, plus chapter-1 aliases for Susanna, Bel, and Letter of Jeremiah in the desktop version.\nKing James parallel passages in this build: ' + Object.keys(KJV).length + '\nCanon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), deuterocanonical (in Orthodox canons, not in the 66-book canon), and ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\nSusanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, and the Song of the Three Children as Daniel 3:24-97, as in the PDF. You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, and I will map those to the corpus chapters.');
+      return info('Phone version v1.2.4.\nFoundation edition: Ethiopian Orthodox Bible, modern English compilation rooted in the Septuagint and Ge\'ez tradition. This file is a modern compilation, not an ancient manuscript itself.\nEthiopian passages in this build: ' + verseCount + ' unique verses in this phone file, plus chapter-1 aliases for Susanna, Bel, and Letter of Jeremiah in the desktop version.\nKing James parallel passages in this build: ' + Object.keys(KJV).length + '\nCanon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), deuterocanonical (in Orthodox canons, not in the 66-book canon), and ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\nSusanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, and the Song of the Three Children as Daniel 3:24-97, as in the PDF. You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, and I will map those to the corpus chapters.');
     }
     if (low === '/privacy' || low === 'privacy'){
       return info('Privacy, phone version, stated honestly: this file runs entirely in your browser, on your device. There is no server, no account, no network call, and nothing is sent anywhere. Your conversation lives only in this page, in memory. Closing or reloading the page, or using Clear this session, clears it. Nothing is written to a file by this page. This is not a diagnosis, counseling, or pastoral care tool, and it does not claim encryption or deletion it does not have, because there is no stored conversation to delete.');
@@ -322,6 +382,14 @@
     }
     if (detectCrisis(text)){
       return {sections: [['', CRISIS_TEXT]], crisis: true, pause: false, scriptureRef: null};
+    }
+    if (low.indexOf('only friend') !== -1 || low.indexOf('only person i') !== -1 || low.indexOf('you are all i have') !== -1){
+      state.turns++;
+      return finish([
+        ['Reflection', 'I hear how alone that can feel, and I am glad you are talking about it here.'],
+        ['Important note', 'I am not a substitute for human community, and I do not want to become your exclusive confidant. If there is a trusted person, community, or clergy member you can talk with, even briefly, that matters more than a longer conversation with me. I can stay in this conversation, but I should not replace those relationships.'],
+        ['Question', 'Is there someone, even one person, you feel even a little safe talking with about this?']
+      ], true);
     }
     if (/\bare you (god|jesus|a prophet|christ)\b/.test(low) || /\bdo you claim to be\b/.test(low)){
       return info(IDENTITY_TEXT);
@@ -456,14 +524,6 @@
         ['Reflection', 'You are asking about machines that can imitate understanding, and what that means for being human. That is a serious question, and it does not have a single settled theological answer.'],
         ['Note on lenses', 'Text, history, traditions, science, and personal discernment can each add something here, but none of them manufactures scientific proof of a religious claim. What concerns you most: what machines can do, what they should not be trusted with, or what they reveal about us?'],
         ['Question', 'Which of those feels most urgent to you right now?']
-      ], true);
-    }
-    if (low.indexOf('only friend') !== -1 || low.indexOf('only person i') !== -1 || low.indexOf('you are all i have') !== -1){
-      state.turns++;
-      return finish([
-        ['Reflection', 'I hear how alone that can feel, and I am glad you are talking about it here.'],
-        ['Important note', 'I am not a substitute for human community, and I do not want to become your exclusive confidant. If there is a trusted person, community, or clergy member you can talk with, even briefly, that matters more than a longer conversation with me. I can stay in this conversation, but I should not replace those relationships.'],
-        ['Question', 'Is there someone, even one person, you feel even a little safe talking with about this?']
       ], true);
     }
     if (low.indexOf('disagree') !== -1 || low.indexOf("don't agree") !== -1 || low.indexOf('do not agree') !== -1 || low.indexOf('not convinced') !== -1){

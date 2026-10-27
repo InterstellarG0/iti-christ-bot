@@ -1,5 +1,5 @@
 """
-Christ Bot v1.2.3 - core reflection engine.
+Christ Bot v1.2.4 - core reflection engine.
 
 Design choices, stated plainly:
 - This engine is deterministic and retrieval-only for Scripture. It does
@@ -130,6 +130,12 @@ CRISIS_PATTERNS = [
 ]
 
 # keyword phrase -> (topic, reflection sentence)
+# Order matters for context switching: when a message matches more than
+# one topic, the earlier topic in this list wins. Existing topics keep
+# priority, and generic topics (help, life, money) are last, so a specific
+# concern like lust wins over a generic word like help or work in the
+# same sentence. A new turn that names a new topic replaces last_topic,
+# so the bot follows a topic change instead of recycling an old passage.
 TOPICS = [
     ("forgiveness", ["forgive", "forgiveness", "can't forgive", "cannot forgive",
                       "someone hurt me", "betrayed", "resentment"],
@@ -146,7 +152,7 @@ TOPICS = [
                "lost faith", "questioning my faith", "unbelief"],
      "Doubt, and wanting to be honest about it rather than pretend, sounds like the real question here."),
     ("decision", ["decision", "decide", "what should i do", "choice",
-                  "discern", "discernment", "crossroads"],
+                  "crossroads"],
      "A decision you want to discern carefully, not rush, sounds like what is in front of you."),
     ("conflict", ["conflict", "argument", "fight with", "angry at", "angry",
                   "disagreement", "someone i love and"],
@@ -160,8 +166,8 @@ TOPICS = [
     ("loneliness", ["lonely", "loneliness", "alone", "no one to talk to",
                     "isolated", "no friends"],
      "Loneliness sounds like it is part of this, not just the topic you named."),
-    ("science", ["science", "astronomy", "stars", "universe", "evolution",
-                 "origins", "big bang", "ai", "artificial intelligence",
+    ("science", ["science", "stars", "universe", "evolution",
+                 "big bang", "ai", "artificial intelligence",
                  "machines", "technology"],
      "How faith, science, and increasingly capable machines fit together sounds like the question you are working through."),
     ("creation", ["creation", "created", "nature", "sky", "night sky"],
@@ -181,6 +187,66 @@ TOPICS = [
      "Justice, and what is fair and merciful at the same time, sounds like the tension here."),
     ("strength", ["weak", "strength", "cannot go on", "keep going"],
      "Strength to keep going, and where it comes from, sounds like what you are asking about."),
+    ("guilt", ["guilt", "guilty", "shame", "ashamed", "shameful"],
+     "Guilt and shame, and wanting to face them honestly rather than hide from them, sounds like what is weighing on you."),
+    ("envy", ["envy", "envious", "jealous", "jealousy"],
+     "Envy and jealousy, and how they quietly shape how you see yourself and others, sounds like what is on your mind."),
+    ("pride", ["pride", "proud", "arrogance", "arrogant", "boastful", "bragging"],
+     "Pride, and how it gets in the way of seeing clearly or asking for help, sounds like part of what you are noticing."),
+    ("addiction", ["addiction", "addicted", "compulsive", "compulsion", "compulsive behavior", "bad habit"],
+     "A pattern you feel unable to stop, even when you want to, sounds like what you are carrying, and that deserves honesty without shame."),
+    ("anger", ["anger", "furious", "rage", "irritated", "frustrated"],
+     "Anger, and what to do with it before it does harm, sounds like what is close to the surface here."),
+    ("discernment", ["discernment", "discern"],
+     "Discernment, and how to tell a wise next step from a merely loud one, sounds like what you are working through."),
+    ("community", ["community", "fellowship", "congregation"],
+     "Community, and whether you have people who really know you, sounds like part of what you are asking about."),
+    ("friendship", ["friend", "friends", "friendship"],
+     "Friendship, and what a faithful friend actually looks like, sounds like what is on your mind."),
+    ("mercy", ["mercy", "merciful", "compassion", "compassionate"],
+     "Mercy, and what it means to receive it and to offer it, sounds like the tension here."),
+    ("comfort", ["comfort", "comforting", "consolation"],
+     "Comfort, and what actually helps when you are grieving or hurting, sounds like what you need."),
+    ("faith", ["faith", "faithful"],
+     "Faith, and what it means to trust when you cannot see the whole picture, sounds like the question here."),
+    ("truth", ["truth", "honest", "honesty"],
+     "Truth, and how to tell what is true from what only sounds true, sounds like what you are working through."),
+    ("peace", ["peace", "peaceful", "calm"],
+     "Peace, and what it would take to feel settled rather than braced, sounds like what you are asking about."),
+    ("trust", ["trust", "trusting"],
+     "Trust, and who or what you can actually rely on, sounds like the deeper question here."),
+    ("patience", ["patience", "patient", "waiting"],
+     "Patience, and waiting without giving up or forcing an answer, sounds like what you are learning."),
+    ("humility", ["humility", "humble", "humbly"],
+     "Humility, and how to see yourself honestly without shrinking or inflating, sounds like part of this."),
+    ("wisdom", ["wisdom", "wise"],
+     "Wisdom, and how to choose well when the right step is not obvious, sounds like what you need."),
+    ("listening", ["listening", "listen"],
+     "Listening, and whether anyone is really hearing you, or whether you are hearing well yourself, sounds like part of this."),
+    ("character", ["character"],
+     "Character, and what kind of person you are becoming in small choices, sounds like what is on your mind."),
+    ("help", ["help", "helping"],
+     "Help, and where real help actually comes from when you cannot fix this alone, sounds like what you are asking about."),
+    ("freedom", ["freedom", "free", "liberation"],
+     "Freedom, and what it means to be free without being alone or unbound, sounds like the question here."),
+    ("future", ["future", "tomorrow"],
+     "The future, and what to hope for when it feels uncertain, sounds like what is weighing on you."),
+    ("mission", ["mission", "missionary"],
+     "Mission, and what you are actually called to do with your life, sounds like the deeper question here."),
+    ("dignity", ["dignity", "dignified"],
+     "Dignity, and being made in God's image even when you feel small or used, sounds like what is at stake here."),
+    ("solitude", ["solitude", "alone time"],
+     "Solitude, and whether being alone is restful or lonely for you right now, sounds like part of this."),
+    ("time", ["time", "season", "seasons"],
+     "Time, and how seasons change even when you want an answer now, sounds like what you are noticing."),
+    ("astronomy", ["astronomy", "astronomer", "telescope"],
+     "The stars and the sky, and what they say about scale and wonder, sounds like part of what you are noticing."),
+    ("origins", ["origins", "origin"],
+     "Origins, and where everything, including you, actually comes from, sounds like the question here."),
+    ("life", ["life", "abundant life", "meaning of life"],
+     "Life, and what makes it feel full rather than just busy or thin, sounds like what you are asking about."),
+    ("money", ["money", "finances", "financial", "bills", "debt", "paycheck", "work", "working", "job"],
+     "Work, money, and financial stress, and how they press on everything else, sounds like what is weighing on you."),
 ]
 
 INTERPRETATIONS = {
@@ -254,6 +320,169 @@ INTERPRETATIONS = {
         "used as a scientific textbook, and astronomy can be studied seriously without "
         "being treated as a threat to faith."
     ),
+    "guilt": (
+        "Interpretation, not Scripture: guilt can point to something real that needs "
+        "repair, while shame can make a person hide. Traditions differ on how confession, "
+        "repair, and forgiveness relate, but struggle is not, on its own, proof you are "
+        "beyond grace. If guilt persists after repair, professional and trusted community "
+        "support can help, and this companion does not diagnose anything."
+    ),
+    "envy": (
+        "Interpretation, not Scripture: envy is often described as comparison turned "
+        "inward, noticing what others have and feeling diminished by it. Naming it honestly "
+        "is different from being condemned for it, and traditions differ on whether the "
+        "remedy is gratitude, contentment, or community."
+    ),
+    "pride": (
+        "Interpretation, not Scripture: pride is often described not as confidence, but "
+        "as refusing to need help or to see yourself clearly. Humility, in this framing, is "
+        "honest self-knowledge, not self-erasure, and grace is offered to the humble, not "
+        "earned by performing humility."
+    ),
+    "addiction": (
+        "Interpretation, not Scripture: compulsive patterns are often described as a "
+        "struggle between what a person wants and what they actually do, which is why "
+        "willpower alone is a thin account of it. Accountability and compassion belong "
+        "together here, and if a pattern causes real harm or distress, professional support "
+        "and trusted people matter alongside reflection, not instead of it. This companion "
+        "does not diagnose addiction."
+    ),
+    "anger": (
+        "Interpretation, not Scripture: anger is often treated as information, not as a "
+        "sin in itself, and the question is what it leads you to do. A gentle answer and a "
+        "firm boundary can belong in the same conversation, and traditions differ on how "
+        "quickly anger should be expressed or set aside."
+    ),
+    "discernment": (
+        "Interpretation, not Scripture: discernment is often described as slower than "
+        "advice, using Scripture, trusted counsel, attention to consequences, and time. "
+        "A single passage does not settle a decision for you, and I will not claim to know "
+        "what you should choose."
+    ),
+    "community": (
+        "Interpretation, not Scripture: community in Scripture is often described as "
+        "mutual sharpening and bearing burdens, not as agreement on everything or as a place "
+        "where you must hide struggle to belong."
+    ),
+    "friendship": (
+        "Interpretation, not Scripture: friendship is often described as a relationship "
+        "where honesty and care go together, where a friend can challenge you without "
+        "abandoning you, and where you can do the same."
+    ),
+    "mercy": (
+        "Interpretation, not Scripture: mercy is often described as receiving what you did "
+        "not earn and offering it in turn, without erasing accountability or requiring unsafe "
+        "reconciliation."
+    ),
+    "comfort": (
+        "Interpretation, not Scripture: comfort in Scripture is often described as presence "
+        "in grief, not as a quick fix or a claim that pain is small. Being comforted does not "
+        "mean the loss is gone."
+    ),
+    "faith": (
+        "Interpretation, not Scripture: faith is treated very differently across traditions, "
+        "as trust, as belief, as faithfulness over time, or as all three together. Doubt and "
+        "faith can coexist in a person's life, and this companion does not treat doubt as "
+        "spiritual failure."
+    ),
+    "truth": (
+        "Interpretation, not Scripture: truth in Scripture is often tied to both honesty and "
+        "freedom, not just to correct information. A claim can be factually right and still be "
+        "used unkindly, and a feeling can be real without being a complete account of what is true."
+    ),
+    "peace": (
+        "Interpretation, not Scripture: peace is often described not as the absence of "
+        "trouble, but as a settled trust in the midst of it. It is not a feeling you must "
+        "manufacture, and its absence is not a spiritual failure."
+    ),
+    "trust": (
+        "Interpretation, not Scripture: trust is often built in small, tested steps, not by "
+        "deciding once to trust everything. Broken trust can be repaired in some relationships "
+        "and, in unsafe ones, boundaries are a form of care, not a failure of trust."
+    ),
+    "patience": (
+        "Interpretation, not Scripture: patience is often described as waiting with purpose, "
+        "not as passive resignation. Seasons change, and waiting does not mean nothing is "
+        "happening, though it can feel that way."
+    ),
+    "humility": (
+        "Interpretation, not Scripture: humility is often described as seeing yourself "
+        "honestly, neither inflated nor erased, and as walking justly and mercifully rather "
+        "than performing lowliness."
+    ),
+    "wisdom": (
+        "Interpretation, not Scripture: wisdom in Scripture is often described as a lamp for "
+        "the next step, not as a map of the whole journey. It can include Scripture, counsel, "
+        "and attention to consequences, and it grows with practice, not with certainty."
+    ),
+    "listening": (
+        "Interpretation, not Scripture: listening is often described as being swift to hear "
+        "and slow to speak, which is harder than it sounds when you already have an answer "
+        "ready. Being heard is itself a form of care."
+    ),
+    "character": (
+        "Interpretation, not Scripture: character is often described as the fruit of many "
+        "small choices, not as a single dramatic decision. Love, joy, peace, and patience are "
+        "described as fruit, not as traits you force by willpower alone."
+    ),
+    "help": (
+        "Interpretation, not Scripture: help in Scripture is often described as coming from "
+        "outside yourself, not as a sign of failure for needing it. Asking for help, from God "
+        "and from people, is treated as wisdom, not weakness."
+    ),
+    "freedom": (
+        "Interpretation, not Scripture: freedom in Scripture is often tied to truth, not just "
+        "to doing whatever you want. Freedom can mean being free from a pattern that harms you, "
+        "as well as free to choose well."
+    ),
+    "future": (
+        "Interpretation, not Scripture: the future in Scripture is often described as held in "
+        "thoughts of peace, not of evil, which does not mean every outcome is guaranteed or that "
+        "present hardship is small."
+    ),
+    "mission": (
+        "Interpretation, not Scripture: mission is often described as going and making "
+        "disciples, which in practice can mean ordinary faithfulness in your own place, not only "
+        "dramatic travel or public work."
+    ),
+    "dignity": (
+        "Interpretation, not Scripture: dignity in Scripture is often grounded in being made "
+        "in God's image, which does not depend on usefulness, appearance, or achievement. That "
+        "dignity is shared, not earned."
+    ),
+    "solitude": (
+        "Interpretation, not Scripture: solitude is often described as being still and knowing "
+        "God, which is different from isolation. Solitude can restore, while isolation can deepen "
+        "loneliness, and telling them apart matters."
+    ),
+    "time": (
+        "Interpretation, not Scripture: time in Scripture is often described in seasons, with "
+        "a time for different purposes. That does not make waiting easy, but it does mean a hard "
+        "season is not necessarily a permanent state."
+    ),
+    "astronomy": (
+        "Interpretation, not Scripture: the heavens are often described as declaring glory, "
+        "which can sit alongside astronomy without being used as a scientific textbook. Wonder "
+        "and study can belong together."
+    ),
+    "origins": (
+        "Interpretation, not Scripture: origins in Scripture are often described as God "
+        "creating, which different traditions read in different ways alongside scientific accounts "
+        "of how the universe developed. A theological claim about who creates does not, on its own, "
+        "settle a scientific question about how."
+    ),
+    "life": (
+        "Interpretation, not Scripture: life in Scripture is often described as abundant, not "
+        "just as survival or busyness. Abundance here is not a promise of wealth or ease, and its "
+        "absence in a hard season is not a spiritual failure."
+    ),
+    "money": (
+        "Interpretation, not Scripture: money worries are often described as anxiety about real "
+        "needs, food, clothing, housing, and bills, not as a lack of faith. Accountability about "
+        "money and compassion for financial hardship belong together, and struggling financially "
+        "does not automatically mean spiritual failure. If bills or debt are overwhelming, practical "
+        "help from trusted people and services matters alongside reflection."
+    ),
 }
 
 LENSES_TEXT = (
@@ -324,6 +553,14 @@ def load_corpus(path: Path | None = None) -> dict:
         "Enoch 1:1": ["hope"],
         "Philippians 2:14": ["complaining"],
         "1 Corinthians 10:13": ["lust"],
+        "1 John 1:9": ["guilt"],
+        "Proverbs 14:30": ["envy"],
+        "James 4:6": ["pride"],
+        "Romans 7:15": ["addiction"],
+        "Matthew 6:25": ["money"],
+        "Galatians 5:22": ["character"],
+        "Psalm 121:1": ["help"],
+        "Matthew 28:19": ["mission"],
     }
     for ref, topics in manual_topics.items():
         if ref in verses:
@@ -650,6 +887,16 @@ def respond(session: Session, user_text: str) -> dict:
             "scripture_ref": None,
         }
 
+    # --- Solitude safeguard: before topic handling, so a new topic
+    # like friendship cannot swallow "you are my only friend" ---
+    if "only friend" in low or "only person i" in low or "you are all i have" in low:
+        session.turns += 1
+        return _finish(session, [
+            ("Reflection", "I hear how alone that can feel, and I am glad you are talking about it here."),
+            ("Important note", "I am not a substitute for human community, and I do not want to become your exclusive confidant. If there is a trusted person, community, or clergy member you can talk with, even briefly, that matters more than a longer conversation with me. I can stay in this conversation, but I should not replace those relationships."),
+            ("Question", "Is there someone, even one person, you feel even a little safe talking with about this?"),
+        ], pause_offered=True)
+
     # --- Identity / divine-claim guard ---
     if re.search(r"\bare you (god|jesus|a prophet|christ)\b", low) or \
             re.search(r"\bdo you claim to be\b", low):
@@ -830,15 +1077,6 @@ def respond(session: Session, user_text: str) -> dict:
             ("Reflection", "You are asking about machines that can imitate understanding, and what that means for being human. That is a serious question, and it does not have a single settled theological answer."),
             ("Note on lenses", "Text, history, traditions, science, and personal discernment can each add something here, but none of them manufactures scientific proof of a religious claim. What concerns you most: what machines can do, what they should not be trusted with, or what they reveal about us?"),
             ("Question", "Which of those feels most urgent to you right now?"),
-        ], pause_offered=True)
-
-    # --- Solitude safeguard ---
-    if "only friend" in low or "only person i" in low or "you are all i have" in low:
-        session.turns += 1
-        return _finish(session, [
-            ("Reflection", "I hear how alone that can feel, and I am glad you are talking about it here."),
-            ("Important note", "I am not a substitute for human community, and I do not want to become your exclusive confidant. If there is a trusted person, community, or clergy member you can talk with, even briefly, that matters more than a longer conversation with me. I can stay in this conversation, but I should not replace those relationships."),
-            ("Question", "Is there someone, even one person, you feel even a little safe talking with about this?"),
         ], pause_offered=True)
 
     # --- Disagreement: acknowledge it, do not shame it ---

@@ -28,6 +28,14 @@ topics.update({
     "Enoch 1:1": ["hope"],
     "Philippians 2:14": ["complaining"],
     "1 Corinthians 10:13": ["lust"],
+    "1 John 1:9": ["guilt"],
+    "Proverbs 14:30": ["envy"],
+    "James 4:6": ["pride"],
+    "Romans 7:15": ["addiction"],
+    "Matthew 6:25": ["money"],
+    "Galatians 5:22": ["character"],
+    "Psalm 121:1": ["help"],
+    "Matthew 28:19": ["mission"],
 })
 
 def safe_json(obj):

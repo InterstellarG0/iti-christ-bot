@@ -1,4 +1,4 @@
-"""Acceptance tests for Christ Bot v1.2.3, mapped to the handoff's 11 tests
+"""Acceptance tests for Christ Bot v1.2.4, mapped to the handoff's 11 tests
 plus dual-edition safeguards.
 
 Run: python3 -m unittest discover -s tests -v
@@ -227,6 +227,108 @@ class TestAcceptance(unittest.TestCase):
         r3 = respond(s2, "find a passage about courage")
         self.assertNotIn("Philippians 2:14", r3["text"])
         self.assertIn("do not have a retrieved passage specifically tagged for courage", r3["text"])
+
+    def test_23_all_new_topics_give_a_passage(self):
+        # v1.2.4: 25 ready topics plus 5 manual groups. Each sample is
+        # chosen to match only that topic, so the expected passage is
+        # the first tagged passage in corpus order for that topic.
+        cases = [
+            ("I feel anger rising", "Proverbs 15:1"),
+            ("I need peace", "Psalm 23:1"),
+            ("I struggle to trust", "Psalm 23:1"),
+            ("I need wisdom", "Psalm 119:105"),
+            ("I need patience", "Ecclesiastes 3:1"),
+            ("I want humility", "Micah 6:8"),
+            ("I want faith", "Matthew 22:37"),
+            ("I want truth", "John 8:32"),
+            ("I need community", "Proverbs 27:17"),
+            ("I need friends", "Proverbs 27:17"),
+            ("I need mercy", "Micah 6:8"),
+            ("I need comfort", "Matthew 5:4"),
+            ("I need discernment", "Psalm 119:105"),
+            ("I want someone listening", "James 1:19"),
+            ("I want character", "Galatians 5:22"),
+            ("I need help", "Psalm 121:1"),
+            ("I want freedom", "John 8:32"),
+            ("I think about the future", "Jeremiah 29:11"),
+            ("I want a mission", "Matthew 28:19"),
+            ("I want dignity", "Genesis 1:27"),
+            ("I need solitude", "Psalm 46:10"),
+            ("I think about time", "Ecclesiastes 3:1"),
+            ("I study astronomy", "Psalm 19:1"),
+            ("I wonder about origins", "Genesis 1:1"),
+            ("I want abundant life", "John 10:10"),
+            ("I feel guilt", "1 John 1:9"),
+            ("I feel envy", "Proverbs 14:30"),
+            ("I feel pride", "James 4:6"),
+            ("I have an addiction", "Romans 7:15"),
+            ("Money is stressing me", "Matthew 6:25"),
+        ]
+        for msg, expected in cases:
+            with self.subTest(msg=msg):
+                s = fresh()
+                respond(s, "Hello")
+                r = respond(s, msg)
+                self.assertIn("Scripture (Ethiopian", r["text"])
+                self.assertIn(expected, r["text"])
+                self.assertIn("Interpretation (not Scripture)", r["text"])
+
+    def test_24_multi_topic_specific_wins_over_generic(self):
+        # Help and work are generic and placed last, so a specific
+        # concern in the same sentence wins.
+        s = fresh()
+        respond(s, "Hello")
+        r = respond(s, "I need your help with lust")
+        self.assertIn("1 Corinthians 10:13", r["text"])
+        s2 = fresh()
+        respond(s2, "Hello")
+        r2 = respond(s2, "I am anxious about money")
+        self.assertIn("Matthew 6:33", r2["text"])
+        self.assertNotIn("Matthew 6:25", r2["text"])
+        s3 = fresh()
+        respond(s3, "Hello")
+        r3 = respond(s3, "I need your help with anger")
+        self.assertIn("Proverbs 15:1", r3["text"])
+
+    def test_25_context_change_replaces_old_topic(self):
+        s = fresh()
+        respond(s, "I am tired of being present and working everyday.")
+        respond(s, "Show me a verse about this")
+        r = respond(s, "Money is stressing me")
+        self.assertIn("Matthew 6:25", r["text"])
+        self.assertNotIn("Psalm 23:1", r["text"])
+        r2 = respond(s, "I feel guilt")
+        self.assertIn("1 John 1:9", r2["text"])
+        self.assertNotIn("Matthew 6:25", r2["text"])
+
+    def test_26_unknown_topic_does_not_reuse_old_passage(self):
+        s = fresh()
+        respond(s, "I need your help with complaining")
+        respond(s, "Show me a verse about this please")
+        r = respond(s, "find a passage about dinosaurs")
+        self.assertNotIn("Philippians 2:14", r["text"])
+        self.assertIn("do not have a retrieved passage specifically tagged for dinosaurs", r["text"])
+
+    def test_27_passage_request_after_new_topic(self):
+        s = fresh()
+        respond(s, "I feel guilt")
+        r = respond(s, "Show me a verse about this please")
+        self.assertIn("1 John 1:9", r["text"])
+        self.assertNotIn("What would be most useful right now", r["text"])
+
+    def test_28_pause_and_crisis_hold_after_new_topics(self):
+        s = fresh()
+        respond(s, "I feel guilt")
+        r = respond(s, "Show me a verse about this please")
+        self.assertTrue(r["pause_offered"])
+        self.assertIn("Continue the conversation", r["text"])
+        self.assertIn("Take a moment to reflect or pray", r["text"])
+        self.assertIn("Pause and return later", r["text"])
+        r2 = respond(s, "I am anxious and I want to kill myself.")
+        self.assertTrue(r2["crisis"])
+        self.assertIn("988", r2["text"])
+        self.assertFalse(r2["pause_offered"])
+        self.assertNotIn("Scripture", r2["text"])
 
 
 if __name__ == "__main__":
