@@ -1,5 +1,5 @@
 """
-Christ Bot v1.2.5 - core reflection engine.
+Christ Bot v1.2.7 - core reflection engine.
 
 Design choices, stated plainly:
 - This engine is deterministic and retrieval-only for Scripture. It does
