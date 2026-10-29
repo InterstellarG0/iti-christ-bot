@@ -1,4 +1,4 @@
-"""Acceptance tests for Christ Bot v1.2.5, mapped to the handoff's 11 tests
+"""Acceptance tests for Christ Bot v1.2.8, mapped to the handoff's 11 tests
 plus dual-edition safeguards.
 
 Run: python3 -m unittest discover -s tests -v
@@ -229,7 +229,7 @@ class TestAcceptance(unittest.TestCase):
         self.assertIn("do not have a retrieved passage specifically tagged for courage", r3["text"])
 
     def test_23_all_new_topics_give_a_passage(self):
-        # v1.2.5: 25 ready topics plus 5 manual groups. Each sample is
+        # v1.2.7: 25 ready topics plus 5 manual groups. Each sample is
         # chosen to match only that topic, so the expected passage is
         # the first tagged passage in corpus order for that topic.
         cases = [
@@ -331,7 +331,7 @@ class TestAcceptance(unittest.TestCase):
         self.assertNotIn("Scripture", r2["text"])
 
     def test_29_evidence_topic_gives_labeled_summary_not_scripture(self):
-        # v1.2.5: evidence is a labeled summary of an external archive,
+        # v1.2.7: evidence is a labeled summary of an external archive,
         # not a retrieved passage, and never presented as proof.
         s = fresh()
         respond(s, "Hello")
@@ -349,6 +349,29 @@ class TestAcceptance(unittest.TestCase):
         respond(s2, "Hello")
         r3 = respond(s2, "What is the historical evidence for Jesus?")
         self.assertIn("Summary (not Scripture)", r3["text"])
+
+    def test_30_topic_index_matches_full_scan(self):
+        # v1.2.8: the topic index built once by load_corpus must
+        # return exactly the first verse a full scan would find
+        # for every topic, so the freeze fix changes speed, not
+        # which passage is retrieved.
+        from engine import _verse_for_topic, load_corpus
+        corpus = load_corpus()
+        self.assertIn("topic_index", corpus)
+        topics = set()
+        for verse in corpus["verses"].values():
+            topics.update(verse.get("topics", []))
+        self.assertTrue(topics)
+        for topic in sorted(topics):
+            indexed = _verse_for_topic(corpus, topic)
+            scanned = None
+            for verse in corpus["verses"].values():
+                if topic in verse.get("topics", []):
+                    scanned = verse
+                    break
+            self.assertIsNotNone(indexed, topic)
+            self.assertEqual(indexed["reference"], scanned["reference"], topic)
+        self.assertIsNone(_verse_for_topic(corpus, "no-such-topic"))
 
 
 if __name__ == "__main__":

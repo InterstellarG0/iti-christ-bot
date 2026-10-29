@@ -1,4 +1,6 @@
-# Christ Bot v1.2.7 - Prototype
+# Christ Bot v1.2.8 - Prototype
+
+**v1.2.8, 2026-10-29:** Send freeze fix, no topic, passage, wording, or feature change. On 2026-10-28 the hosted link froze when trying to send on a phone. Cause, in the static phone/hosted engine: every reply rescanned all 40,236 verses, sorting every chapter, on the main thread, with no visible sending state and no guard against repeat taps, so Send looked frozen. Fix: a topic index is built once at startup, in exactly the same corpus order the old scan used, so each reply is now a single lookup and returns the same first passage as before. Send shows Listening, is disabled while a reply is being prepared, ignores repeat taps, and always re-enables, even if preparing or rendering a reply throws. Send starts disabled in the HTML and is enabled only once the handlers are wired, so taps during the initial load cannot silently do nothing. The same index is built once by the Python engine in `load_corpus()`, with a scan fallback for hand-built corpora. The local server UI in `web/index.html` is the only build with a network request, and it now has a 30 second request timeout, the same busy guard, a protected scroll, and the typed message is restored if the request fails. Two claims from the forwarded GPT conversation did not match the hosted static build and were not treated as defects there: it has no `/api/chat` endpoint and no network request, and its scroll call was already wrapped in try/catch. Remaining limit: the single-file phone/hosted build still parses the 5.7 MB corpus synchronously at startup, which was not restructured; Send staying disabled until wiring is the mitigation for taps during that load. Tests: all 30 Python acceptance tests pass, including new test 30 proving the index returns the same first verse as a full scan for every topic, and Node checks on the built phone file prove 49 topics with 0 mismatches against the old scan, 10,000 indexed lookups in 0 ms against 315 ms for 20 old scans, and guilt, money, evidence, John 3:16, and crisis conversations still behave as before. Real phone confirmation by Anthony is still needed; no build is called fixed on a phone until he tests Send there. The hosted public link still serves v1.2.7 until it is shared again, and the hosted v1.2.8 build was verified separately in a live probe.
 
 **v1.2.7, 2026-10-26:** brand colors and Send fixes, phone only, no topic or passage change. Brand palette approved by Anthony: cream #f7f5ef background, deep green #2f5d50 for buttons and title, gold #c9a86a as the brand accent (gold rule under the title, gold Scripture border, gold on button press), dark slate #1d2733 text, crisis red kept only for crisis. Enter now sends in the browser: Enter without Shift sends the message, Shift plus Enter still inserts a newline. Send is more robust: scroll errors no longer kill a reply, a reply error shows a plain fallback message instead of nothing, and if the main chat script fails before wiring Send, a separate fallback script stops the form from reloading the page and shows a diagnosis box telling the user to open the file in Chrome on Android or Safari on iPhone, not in a file preview.
 
@@ -177,6 +179,11 @@ new privacy statement that matches what is actually built.
   citation, and treat "could not retrieve" as safer than a wrong quote.
 - The web UI is a local demo. It is not hardened for public deployment,
   authentication, or multi-user use.
+- The single-file phone/hosted build still parses the 5.7 MB corpus
+  synchronously at startup, which was not restructured in v1.2.8.
+  Send stays disabled until the chat script is wired, so taps during
+  that load cannot silently do nothing, but the load itself still
+  blocks the page briefly on a slow phone.
 - This prototype does not diagnose, counsel, or provide pastoral care.
   It reflects, and it redirects to people and professionals when care
   is needed.

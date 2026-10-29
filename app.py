@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Christ Bot v1.2.7 - Phase 2 prototype.
+Christ Bot v1.2.8 - Phase 2 prototype.
 
 Foundation: Ethiopian Orthodox Bible, modern English compilation
 rooted in the Septuagint and Ge'ez tradition, with King James shown
@@ -166,7 +166,7 @@ def run_web(corpus: dict, port: int) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Christ Bot v1.2.7 prototype")
+    parser = argparse.ArgumentParser(description="Christ Bot v1.2.8 prototype")
     parser.add_argument("--web", action="store_true", help="run the minimal web UI")
     parser.add_argument("--port", type=int, default=8000, help="web port (default 8000)")
     parser.add_argument("--demo", action="store_true", help="run a scripted demo conversation")

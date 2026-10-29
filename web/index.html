@@ -88,25 +88,51 @@
       div.appendChild(wrap);
     }
     chat.appendChild(div);
-    div.scrollIntoView({behavior: 'smooth', block: 'end'});
+    try { div.scrollIntoView({behavior: 'smooth', block: 'end'}); } catch (err) {}
   }
+  // v1.2.8: this local server UI is the only build with a network
+  // request. It now has a request timeout, a busy guard so repeat
+  // taps cannot stack overlapping requests, and the typed message
+  // is restored if the request fails, instead of being lost.
+  // The hosted static build has no fetch at all, so no timeout
+  // applies there; its freeze fix is the topic index in the
+  // phone engine, not a network timeout.
+  const sendBtn = form.querySelector('button.send');
+  let sending = false;
   async function send(text) {
     const message = (text ?? input.value).trim();
     if (!message) return;
-    input.value = '';
-    addMessage('You', [['', message]]);
+    if (sending) return;
+    sending = true;
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Listening…'; }
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({session, message})
-      });
-      const data = await res.json();
-      session = data.session;
-      localStorage.setItem('christbot_session', session);
-      addMessage('Christ Bot', data.sections, {crisis: data.crisis, pause: data.pause_offered});
+      input.value = '';
+      addMessage('You', [['', message]]);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({session, message}),
+          signal: controller.signal
+        });
+        const data = await res.json();
+        session = data.session;
+        localStorage.setItem('christbot_session', session);
+        addMessage('Christ Bot', data.sections, {crisis: data.crisis, pause: data.pause_offered});
+      } finally {
+        clearTimeout(timeout);
+      }
     } catch (e) {
-      addMessage('Christ Bot', [['', 'I could not reach the local prototype server. Please check that it is running, and try again.']]);
+      const timedOut = e && e.name === 'AbortError';
+      addMessage('Christ Bot', [['', timedOut
+        ? 'That reply took too long, so I stopped waiting. Your message is back in the box below, and you can try sending it again.'
+        : 'I could not reach the local prototype server. Please check that it is running, and try again.']]);
+      if (!input.value) input.value = message;
+    } finally {
+      sending = false;
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send'; }
     }
   }
   form.addEventListener('submit', (e) => { e.preventDefault(); send(); });

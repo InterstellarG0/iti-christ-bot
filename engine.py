@@ -1,5 +1,5 @@
 """
-Christ Bot v1.2.7 - core reflection engine.
+Christ Bot v1.2.8 - core reflection engine.
 
 Design choices, stated plainly:
 - This engine is deterministic and retrieval-only for Scripture. It does
@@ -573,6 +573,17 @@ def load_corpus(path: Path | None = None) -> dict:
         if ref in verses:
             verses[ref]["topics"] = topics
 
+    # v1.2.8: topic index built once, in exactly the order a full scan
+    # of verses would visit them, so the first verse per topic is the
+    # same one _verse_for_topic used to find by scanning every reply.
+    # The phone JavaScript had the same scan, over 40,236 verses with
+    # a sort per chapter, on every reply, which made Send look frozen.
+    topic_index: dict[str, str] = {}
+    for ref, entry in verses.items():
+        for topic in entry.get("topics", []):
+            if topic not in topic_index:
+                topic_index[topic] = ref
+
     return {
         "translation": ETHIOPIAN_TRANSLATION,
         "kjv_translation": KJV_TRANSLATION,
@@ -582,6 +593,7 @@ def load_corpus(path: Path | None = None) -> dict:
         "books": books,
         "verse_count": len(verses),
         "kjv_count": len(kjv_verses),
+        "topic_index": topic_index,
     }
 
 
@@ -1153,6 +1165,12 @@ def _evidence_sections(reflection: str) -> list[tuple[str, str]]:
 
 def _verse_for_topic(corpus: dict, topic: str) -> dict | None:
     # Deterministic: first verse in corpus order carrying that topic.
+    # Prefer the index built once by load_corpus; fall back to a scan
+    # for corpora built by hand (for example in tests) with no index.
+    index = corpus.get("topic_index")
+    if index is not None:
+        ref = index.get(topic)
+        return corpus["verses"].get(ref) if ref else None
     for ref, verse in corpus["verses"].items():
         if topic in verse.get("topics", []):
             return verse

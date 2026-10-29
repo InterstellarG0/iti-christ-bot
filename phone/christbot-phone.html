@@ -9,7 +9,8 @@
   html, body { height: 100%; }
   body { margin: 0; font-family: Georgia, serif; color: #1d2733; background: #f7f5ef; display: flex; flex-direction: column; }
   header { padding: 16px 16px 8px; max-width: 760px; width: 100%; margin: 0 auto; }
-  header h1 { margin: 0 0 4px; font-size: 26px; }
+  header h1 { margin: 0 0 4px; font-size: 26px; color: #2f5d50; }
+  header h1::after { content: ""; display: block; width: 64px; height: 4px; background: #c9a86a; border-radius: 2px; margin-top: 6px; }
   header p { margin: 4px 0; color: #5a6a7d; line-height: 1.5; font-size: 15px; }
   #chat { flex: 1; overflow-y: auto; padding: 8px 16px 16px; max-width: 760px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
   .msg { background: #fff; border: 1px solid #dbe3ec; border-radius: 12px; padding: 14px 16px; line-height: 1.6; font-size: 17px; }
@@ -18,10 +19,11 @@
   .who { font-family: system-ui, sans-serif; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: #5a6a7d; margin-bottom: 8px; }
   .section-label { font-family: system-ui, sans-serif; font-weight: 700; font-size: 14px; margin-top: 12px; }
   .section-label:first-child { margin-top: 0; }
-  .scripture { font-style: italic; border-left: 3px solid #2f5d50; padding-left: 12px; }
+  .scripture { font-style: italic; border-left: 3px solid #c9a86a; padding-left: 12px; }
   .pause { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
   .pause button, .tools button { font-family: system-ui, sans-serif; border: 1px solid #2f5d50; background: #fff; color: #2f5d50; border-radius: 999px; padding: 10px 14px; cursor: pointer; font-size: 15px; min-height: 44px; }
   .pause button:hover, .tools button:hover { background: #2f5d50; color: #fff; }
+  .pause button:active, .tools button:active { background: #c9a86a; border-color: #c9a86a; color: #1d2733; }
   .composer { padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: #f7f5ef; border-top: 1px solid #dbe3ec; }
   .composer-inner { max-width: 760px; margin: 0 auto; }
   form { display: flex; gap: 10px; }
@@ -47,13 +49,14 @@
   <h1>Christ Bot</h1>
   <p>Ancient Wisdom, Modern Discernment. A scripture-centered reflection companion.</p>
   <p>I am software, not God, Jesus, a prophet, or a supernatural being. I am not a replacement for clergy, a counselor, or your own conscience. You are free to disagree.</p>
-  <p id="counts"></p>
+  <p id="counts">Phone version v1.2.8. Foundation: Ethiopian Orthodox Bible (88 books, 40236 verses in this file), King James parallel: 53 passages. Works offline after download, no server.</p>
 </header>
-<main id="chat"></main>
+<main id="chat"><div class="msg"><div class="who">Christ Bot</div><div>Welcome. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage. What is on your mind?</div></div></main>
+<noscript><div style="max-width:760px;margin:0 auto;padding:14px 16px;background:#fff;border:1px solid #dbe3ec;border-radius:12px;">JavaScript is not running in this viewer, so Send will not work here. Open this file in Chrome on Android, or Safari on iPhone, not in a file preview, and the conversation will work.</div></noscript>
 <div class="composer"><div class="composer-inner">
   <form id="form">
     <textarea id="input" placeholder="Share what is on your mind. I will listen first." aria-label="Your message"></textarea>
-    <button class="send" type="submit">Send</button>
+    <button class="send" type="submit" disabled>Send</button>
   </form>
   <div class="tools">
     <button type="button" data-cmd="Show me John 3:16">Example passage</button>
@@ -84,7 +87,7 @@
   // count also includes alias keys, so report the corpus verse count
   // honestly as the number of unique verses in this file.
   var countsEl = document.getElementById('counts');
-  if (countsEl) countsEl.textContent = 'Phone version v1.2.5. Foundation: Ethiopian Orthodox Bible (' + bookCount + ' books, ' + verseCount + ' verses in this file), King James parallel: ' + Object.keys(KJV).length + ' passages. Works offline after download, no server.';
+  if (countsEl) countsEl.textContent = 'Phone version v1.2.8. Foundation: Ethiopian Orthodox Bible (' + bookCount + ' books, ' + verseCount + ' verses in this file), King James parallel: ' + Object.keys(KJV).length + ' passages. Works offline after download, no server.';
 
   var CRISIS_TEXT = "If you feel you may act on thoughts of harming yourself right now, please reach out for help immediately.\n\nIn the United States, call or text 988 to reach the Suicide and Crisis Lifeline. You can also text HOME to 741741 for the Crisis Text Line, or call 911 if you are in immediate danger.\nIf you are outside the United States, please contact your local emergency number or a trusted crisis service in your country, and consider telling a trusted person near you right now.\n\nI am pausing reflective conversation here so you can get real-world support. I am not a counselor or a replacement for professional care.";
   var IDENTITY_TEXT = "I am Christ Bot, a scripture-centered reflection companion built by the Interstellar Religious Initiative. I am software, not God, Jesus, a prophet, or a supernatural being. I do not know God's will for you, and I am not a replacement for clergy, a counselor, or your own conscience. You are free to disagree with anything I offer.";
@@ -290,7 +293,14 @@
   function topicsForRef(ref){
     return TOPICMAP[canonicalRef(ref)] || [];
   }
-  function verseForTopic(topic){
+  // v1.2.8: topic index built once at startup, in exactly the same
+  // corpus order the old per-reply scan used (books in file order,
+  // chapters and verses numerically sorted). The old verseForTopic
+  // rescanned all 40,236 verses, sorting every chapter, on every
+  // reply, which blocked the main thread and made Send look frozen
+  // on a phone. A lookup is now a single object read.
+  var TOPIC_INDEX = {};
+  (function buildTopicIndex(){
     var books = Object.keys(ETH);
     for (var bi = 0; bi < books.length; bi++){
       var book = books[bi], chapters = ETH[book][1];
@@ -302,11 +312,15 @@
           var v = String(vNums[vi]);
           var ref = (book === 'Psalm 151') ? ('Psalm 151:' + v) : (book + ' ' + ch + ':' + v);
           var topics = TOPICMAP[ref] || [];
-          if (topics.indexOf(topic) !== -1) return ref;
+          for (var ti = 0; ti < topics.length; ti++){
+            if (!(topics[ti] in TOPIC_INDEX)) TOPIC_INDEX[topics[ti]] = ref;
+          }
         }
       }
     }
-    return null;
+  })();
+  function verseForTopic(topic){
+    return TOPIC_INDEX[topic] || null;
   }
   function detectCrisis(text){
     var low = text.toLowerCase();
@@ -385,7 +399,7 @@
       return info('Commands you can use:\n/verse John 3:16 - retrieve a passage by reference, if it is in the local corpus\n/edition - show the foundation edition, KJV parallel, and canon labels\n/lenses - show the five lenses used here\n/pause - take a Sacred Pause\n/continue - continue the conversation\n/privacy - how this phone file handles your words\n/reset - clear this session only\n\nThe foundation is the Ethiopian Orthodox Bible, in a modern English compilation rooted in the Septuagint and Ge\'ez tradition. King James is shown only as a separate parallel, never merged into Ethiopian text. You can also just talk. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage.');
     }
     if (low === '/edition' || low === 'edition'){
-      return info('Phone version v1.2.5.\nFoundation edition: Ethiopian Orthodox Bible, modern English compilation rooted in the Septuagint and Ge\'ez tradition. This file is a modern compilation, not an ancient manuscript itself.\nEthiopian passages in this build: ' + verseCount + ' unique verses in this phone file, plus chapter-1 aliases for Susanna, Bel, and Letter of Jeremiah in the desktop version.\nKing James parallel passages in this build: ' + Object.keys(KJV).length + '\nCanon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), deuterocanonical (in Orthodox canons, not in the 66-book canon), and ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\nSusanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, and the Song of the Three Children as Daniel 3:24-97, as in the PDF. You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, and I will map those to the corpus chapters.');
+      return info('Phone version v1.2.8.\nFoundation edition: Ethiopian Orthodox Bible, modern English compilation rooted in the Septuagint and Ge\'ez tradition. This file is a modern compilation, not an ancient manuscript itself.\nEthiopian passages in this build: ' + verseCount + ' unique verses in this phone file, plus chapter-1 aliases for Susanna, Bel, and Letter of Jeremiah in the desktop version.\nKing James parallel passages in this build: ' + Object.keys(KJV).length + '\nCanon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), deuterocanonical (in Orthodox canons, not in the 66-book canon), and ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\nSusanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, and the Song of the Three Children as Daniel 3:24-97, as in the PDF. You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, and I will map those to the corpus chapters.');
     }
     if (low === '/privacy' || low === 'privacy'){
       return info('Privacy, phone version, stated honestly: this file runs entirely in your browser, on your device. There is no server, no account, no network call, and nothing is sent anywhere. Your conversation lives only in this page, in memory. Closing or reloading the page, or using Clear this session, clears it. Nothing is written to a file by this page. This is not a diagnosis, counseling, or pastoral care tool, and it does not claim encryption or deletion it does not have, because there is no stored conversation to delete.');
@@ -580,6 +594,8 @@
     var chat = document.getElementById('chat');
     var form = document.getElementById('form');
     var input = document.getElementById('input');
+    var sendBtn = form.querySelector('button.send');
+    var sending = false;
     function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function renderSections(sections){
       return sections.map(function(pair){
@@ -607,27 +623,75 @@
         div.appendChild(wrap);
       }
       chat.appendChild(div);
-      div.scrollIntoView({behavior: 'smooth', block: 'end'});
+      try { div.scrollIntoView({behavior: 'smooth', block: 'end'}); } catch (err) {}
     }
     function send(text){
       var message = (text !== undefined && text !== null ? text : input.value).trim();
       if (!message) return;
-      input.value = '';
-      addMessage('You', [['', message]]);
-      var result;
-      if (message === '/reset'){
-        resetState();
-        addMessage('Christ Bot', [['', 'Session cleared. We can start fresh, whenever you are ready.']], {});
-        return;
+      // v1.2.8 busy guard: ignore repeat taps while a reply is being
+      // prepared, so they cannot queue up and make Send look frozen.
+      // The guard is checked before the input is cleared, so a tap
+      // ignored here never loses the typed message.
+      if (sending) return;
+      sending = true;
+      if (sendBtn){ sendBtn.disabled = true; sendBtn.textContent = 'Listening…'; }
+      try {
+        input.value = '';
+        addMessage('You', [['', message]]);
+        if (message === '/reset'){
+          resetState();
+          addMessage('Christ Bot', [['', 'Session cleared. We can start fresh, whenever you are ready.']], {});
+          return;
+        }
+        var result;
+        try {
+          result = respond(message);
+        } catch (err) {
+          addMessage('Christ Bot', [['', 'Something went wrong in this page while preparing a reply. Please reload the page and try again. If it keeps happening, open this file in Chrome on Android, or Safari on iPhone.']], {});
+          return;
+        }
+        addMessage('Christ Bot', result.sections, {crisis: result.crisis, pause: result.pause});
+      } finally {
+        // Always re-enable Send, even if preparing or rendering a
+        // reply threw, so the page can never be left permanently stuck.
+        sending = false;
+        if (sendBtn){ sendBtn.disabled = false; sendBtn.textContent = 'Send'; }
       }
-      result = respond(message);
-      addMessage('Christ Bot', result.sections, {crisis: result.crisis, pause: result.pause});
     }
     form.addEventListener('submit', function(e){ e.preventDefault(); send(); });
+    input.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        send();
+      }
+    });
     document.querySelectorAll('[data-cmd]').forEach(function(b){ b.addEventListener('click', function(){ send(b.dataset.cmd); }); });
-    addMessage('Christ Bot', [['', 'Welcome. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage. What is on your mind?']], {});
+    // Welcome box is static HTML above, so it shows even if this script
+    // is blocked by a file preview. Do not add a second welcome here.
+    // Send starts disabled in the HTML and is only enabled here, once
+    // the handlers are wired, so taps during the initial load cannot
+    // silently do nothing.
+    if (sendBtn){ sendBtn.disabled = false; sendBtn.textContent = 'Send'; }
     if (input.focus) input.focus();
+    window.__christbotReady = true;
   }
+})();
+</script>
+<script>
+// Fallback: if the main chat script above failed before wiring Send,
+// do not silently reload the page and lose the typed message. Show
+// a plain diagnosis instead, and stop the form from reloading.
+(function(){
+  if (window.__christbotReady) return;
+  var chat = document.getElementById('chat');
+  if (chat){
+    var div = document.createElement('div');
+    div.className = 'msg';
+    div.innerHTML = '<div class="who">Christ Bot</div><div>The chat script did not start in this browser or viewer, so Send cannot work here. Open this file in Chrome on Android, or Safari on iPhone, not in a file preview, and try again.</div>';
+    chat.appendChild(div);
+  }
+  var form = document.getElementById('form');
+  if (form) form.addEventListener('submit', function(e){ e.preventDefault(); });
 })();
 </script>
 </body>
