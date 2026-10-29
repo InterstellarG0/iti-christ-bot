@@ -1,4 +1,4 @@
-"""Acceptance tests for Christ Bot v1.2.8, mapped to the handoff's 11 tests
+"""Acceptance tests for Christ Bot v1.2.9, mapped to the handoff's 11 tests
 plus dual-edition safeguards.
 
 Run: python3 -m unittest discover -s tests -v
@@ -372,6 +372,47 @@ class TestAcceptance(unittest.TestCase):
             self.assertIsNotNone(indexed, topic)
             self.assertEqual(indexed["reference"], scanned["reference"], topic)
         self.assertIsNone(_verse_for_topic(corpus, "no-such-topic"))
+
+    def test_31_mary_cross_topic_gives_verified_passage_and_labeled_summary(self):
+        # v1.2.9: Mary/Quran questions give a retrieved Ethiopian passage,
+        # a summary in own words (never a Quran quotation), the sonship
+        # difference, and source/confidence labels.
+        s = fresh()
+        respond(s, "Hello")
+        r = respond(s, "Why does the Virgin Mary pop up in the Quran?")
+        self.assertIn("Scripture (Ethiopian", r["text"])
+        self.assertIn("Rejoice, you highly favored one", r["text"])
+        self.assertIn("Luke 1:28", r["text"])
+        self.assertIn("Cross-tradition summary (not Scripture)", r["text"])
+        self.assertIn("Where the accounts agree and where they differ", r["text"])
+        self.assertIn("Son of God", r["text"])
+        self.assertIn("Sources and confidence", r["text"])
+        self.assertIn("legacy.quran.com/19/16-34", r["text"])
+        self.assertIn("legacy.quran.com/3/33-51", r["text"])
+        # No Quran text is quoted in the bot output.
+        self.assertNotIn("O Mary, indeed Allah has chosen you", r["text"])
+        self.assertNotIn("It is not [befitting] for Allah to take a son", r["text"])
+        self.assertNotIn("How can I have a boy while no man has touched me", r["text"])
+        # No invented KJV parallel for Luke 1:28.
+        self.assertNotIn("King James Version (parallel,", r["text"])
+        self.assertTrue(r["pause_offered"])
+
+    def test_32_mary_verse_request_and_every_locator_retrievable(self):
+        # v1.2.9: a verse request after the Mary topic returns the same
+        # cross-topic answer, and every Ethiopian locator named in the
+        # Sources section is actually retrievable from the corpus.
+        from engine import _scripture_sections, load_corpus
+        s = fresh()
+        respond(s, "Hello")
+        respond(s, "Tell me about Mary and the Quran")
+        r = respond(s, "Show me a verse about this please")
+        self.assertIn("Luke 1:28", r["text"])
+        self.assertIn("Cross-tradition summary", r["text"])
+        corpus = load_corpus()
+        for ref in ["Luke 1:26", "Luke 1:28", "Luke 1:35", "Luke 1:38",
+                    "Luke 1:46", "Luke 2:19", "Matthew 1:18", "Matthew 1:23",
+                    "John 2:3", "John 19:26", "Acts 1:14"]:
+            self.assertIsNotNone(_scripture_sections(corpus, ref), ref)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# Christ Bot - System Prompt (v1.2.8)
+# Christ Bot - System Prompt (v1.2.9)
 
 This file encodes the product principles and safeguards for any future
 language-model adapter. In Phase 1, the shipped prototype in this folder

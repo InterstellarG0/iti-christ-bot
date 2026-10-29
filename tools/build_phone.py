@@ -36,6 +36,7 @@ topics.update({
     "Galatians 5:22": ["character"],
     "Psalm 121:1": ["help"],
     "Matthew 28:19": ["mission"],
+    "Luke 1:28": ["mary"],
 })
 
 def safe_json(obj):

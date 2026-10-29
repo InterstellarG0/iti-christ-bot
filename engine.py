@@ -1,5 +1,5 @@
 """
-Christ Bot v1.2.8 - core reflection engine.
+Christ Bot v1.2.9 - core reflection engine.
 
 Design choices, stated plainly:
 - This engine is deterministic and retrieval-only for Scripture. It does
@@ -247,6 +247,8 @@ TOPICS = [
      "Life, and what makes it feel full rather than just busy or thin, sounds like what you are asking about."),
     ("money", ["money", "finances", "financial", "bills", "debt", "paycheck", "work", "working", "job"],
      "Work, money, and financial stress, and how they press on everything else, sounds like what is weighing on you."),
+    ("mary", ["mary", "maryam", "virgin mary", "mary in the quran", "mary in the koran", "quran", "qur'an", "koran", "surah", "surah maryam"],
+     "Mary, and why she appears in both the Ethiopian Bible and the Quran, sounds like what you are asking about."),
     ("evidence", ["evidence", "historical evidence", "historical jesus", "did jesus exist", "is jesus real", "proof of jesus", "prove jesus", "ancient witnesses", "outside the bible", "proof"],
      "Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about."),
 ]
@@ -490,6 +492,12 @@ INTERPRETATIONS = {
         "material from Scripture itself. It can inform what you think about Jesus as a historical "
         "figure, without settling theological claims, and disputed artifacts should be named as disputed."
     ),
+    "mary": (
+        "Interpretation, not Scripture: this answer is about Mary, the mother of Jesus, not Mary "
+        "Magdalene or Mary of Bethany. The Ethiopian passage and the Quran summary below are "
+        "different kinds of material, kept separate, and they do not agree on who Jesus is. "
+        "That difference is stated in the answer itself, and you are free to weigh it yourself."
+    ),
 }
 
 LENSES_TEXT = (
@@ -568,6 +576,7 @@ def load_corpus(path: Path | None = None) -> dict:
         "Galatians 5:22": ["character"],
         "Psalm 121:1": ["help"],
         "Matthew 28:19": ["mission"],
+        "Luke 1:28": ["mary"],
     }
     for ref, topics in manual_topics.items():
         if ref in verses:
@@ -1016,6 +1025,8 @@ def respond(session: Session, user_text: str) -> dict:
         session.turns += 1
         if topic == "evidence":
             return _finish(session, _evidence_sections(session.last_reflection or "Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about."), pause_offered=True)
+        if topic == "mary":
+            return _finish(session, _mary_sections(session.corpus, session.last_reflection or "Mary, and why she appears in both the Ethiopian Bible and the Quran, sounds like what you are asking about."), pause_offered=True)
         if not verse:
             return _finish(session, [
                 ("Reflection", "I do not have a retrieved passage for that topic in the local corpus, so I will not invent one."),
@@ -1060,6 +1071,8 @@ def respond(session: Session, user_text: str) -> dict:
         session.turns += 1
         if topic == "evidence":
             return _finish(session, _evidence_sections(session.last_reflection or "Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about."), pause_offered=True)
+        if topic == "mary":
+            return _finish(session, _mary_sections(session.corpus, session.last_reflection or "Mary, and why she appears in both the Ethiopian Bible and the Quran, sounds like what you are asking about."), pause_offered=True)
         if not verse:
             return _finish(session, [
                 ("Reflection", "I do not have a retrieved passage for that topic in the local corpus, so I will not invent one."),
@@ -1082,6 +1095,9 @@ def respond(session: Session, user_text: str) -> dict:
         if topic == "evidence":
             session.turns += 1
             return _finish(session, _evidence_sections(reflection), pause_offered=True)
+        if topic == "mary":
+            session.turns += 1
+            return _finish(session, _mary_sections(session.corpus, reflection), pause_offered=True)
         verse = _verse_for_topic(session.corpus, topic)
         session.turns += 1
         sections = [("Reflection", reflection)]
@@ -1129,6 +1145,61 @@ def _generic_interpretation() -> str:
         "settle a personal question on its own. Any reading offered here is "
         "interpretation, not part of the quoted text."
     )
+
+
+def _mary_sections(corpus: dict, reflection: str) -> list[tuple[str, str]]:
+    # Cross-tradition answer, verified 2026-10-29 against both sources.
+    # The Ethiopian passage is retrieved from the local corpus. The Quran
+    # material is a summary in own words, never a quotation, and no Quran
+    # text is stored in this app. Every claim carries its source and
+    # confidence in the Sources section below.
+    sections: list[tuple[str, str]] = [("Reflection", reflection)]
+    sections.extend(_scripture_sections(corpus, "Luke 1:28") or [])
+    sections.append((
+        "Note",
+        "This answer is about Mary, the mother of Jesus. The corpus also names "
+        "Mary Magdalene and Mary of Bethany, who are different people in the text.",
+    ))
+    sections.append((
+        "Cross-tradition summary (not Scripture)",
+        "This summary is in my own words, not a quotation from the Quran, and no Quran "
+        "text is stored in this app. In Surah 3, Mary is presented as chosen and set apart, "
+        "and as the mother of Jesus, called the Messiah, son of Mary. In Surah 19, which is "
+        "named for Mary, an angel announces a son, Mary asks how that can happen, she gives "
+        "birth alone under a palm tree, and she brings the child to her people. In Surah 21 "
+        "and Surah 66, she is described as guarding her chastity, and she and her son are "
+        "called a sign. In Surah 23, the son of Mary and his mother are called a sign.",
+    ))
+    sections.append((
+        "Where the accounts agree and where they differ",
+        "They agree on an angel announcing a son, on Mary asking how that can happen, and on "
+        "a birth without a human father, presented as a sign. They differ on who Jesus is. "
+        "Luke 1:35, in the Ethiopian text in this corpus, calls the child the Son of God. "
+        "The Quran, in Surah 19:35, says it is not fitting for God to take a son, and in "
+        "Surah 19:30 presents Jesus as a servant of God and a prophet. Those are different "
+        "claims, and this companion does not pretend they are the same. Why the Quran "
+        "includes Mary at all has no single agreed answer. The Quran retells figures shared "
+        "with earlier scriptures, and Mary carries the birth story. That is historical "
+        "reasoning, not a quotation, and it is labeled as reasoning here.",
+    ))
+    sections.append((
+        "Sources and confidence",
+        "Verified in the local Ethiopian corpus, high confidence: Luke 1:26-38, Luke 1:46-48, "
+        "Luke 2:19, Matthew 1:18-25, John 2:1-5, John 19:25-27, Acts 1:14. Verified against "
+        "Sahih International on Quran.com, high confidence for the locators, summary in own "
+        "words: Quran 3:33-51, 19:16-36, 21:91, 23:50, 66:12. Counts of mentions differ by "
+        "counting method, low confidence for any single number, so no single count is given "
+        "here. Ethiopian tradition, attributed, not certified here: Mary is venerated as the "
+        "Ark of the Covenant and under the title Kidane Mehret, Covenant of Mercy. Feast "
+        "counts and dates differ between sources, so none is certified here. Links, Sahih "
+        "International: https://legacy.quran.com/19/16-34 and https://legacy.quran.com/3/33-51",
+    ))
+    sections.append((
+        "Question",
+        "Which part would help most: the Ethiopian passage, the Quran summary, or where the "
+        "two accounts differ? You are free to disagree with any of it.",
+    ))
+    return sections
 
 
 def _evidence_sections(reflection: str) -> list[tuple[str, str]]:

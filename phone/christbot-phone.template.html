@@ -49,7 +49,7 @@
   <h1>Christ Bot</h1>
   <p>Ancient Wisdom, Modern Discernment. A scripture-centered reflection companion.</p>
   <p>I am software, not God, Jesus, a prophet, or a supernatural being. I am not a replacement for clergy, a counselor, or your own conscience. You are free to disagree.</p>
-  <p id="counts">Phone version v1.2.8. Foundation: Ethiopian Orthodox Bible (88 books, 40236 verses in this file), King James parallel: 53 passages. Works offline after download, no server.</p>
+  <p id="counts">Phone version v1.2.9. Foundation: Ethiopian Orthodox Bible (88 books, 40236 verses in this file), King James parallel: 53 passages. Works offline after download, no server.</p>
 </header>
 <main id="chat"><div class="msg"><div class="who">Christ Bot</div><div>Welcome. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage. What is on your mind?</div></div></main>
 <noscript><div style="max-width:760px;margin:0 auto;padding:14px 16px;background:#fff;border:1px solid #dbe3ec;border-radius:12px;">JavaScript is not running in this viewer, so Send will not work here. Open this file in Chrome on Android, or Safari on iPhone, not in a file preview, and the conversation will work.</div></noscript>
@@ -87,7 +87,7 @@
   // count also includes alias keys, so report the corpus verse count
   // honestly as the number of unique verses in this file.
   var countsEl = document.getElementById('counts');
-  if (countsEl) countsEl.textContent = 'Phone version v1.2.8. Foundation: Ethiopian Orthodox Bible (' + bookCount + ' books, ' + verseCount + ' verses in this file), King James parallel: ' + Object.keys(KJV).length + ' passages. Works offline after download, no server.';
+  if (countsEl) countsEl.textContent = 'Phone version v1.2.9. Foundation: Ethiopian Orthodox Bible (' + bookCount + ' books, ' + verseCount + ' verses in this file), King James parallel: ' + Object.keys(KJV).length + ' passages. Works offline after download, no server.';
 
   var CRISIS_TEXT = "If you feel you may act on thoughts of harming yourself right now, please reach out for help immediately.\n\nIn the United States, call or text 988 to reach the Suicide and Crisis Lifeline. You can also text HOME to 741741 for the Crisis Text Line, or call 911 if you are in immediate danger.\nIf you are outside the United States, please contact your local emergency number or a trusted crisis service in your country, and consider telling a trusted person near you right now.\n\nI am pausing reflective conversation here so you can get real-world support. I am not a counselor or a replacement for professional care.";
   var IDENTITY_TEXT = "I am Christ Bot, a scripture-centered reflection companion built by the Interstellar Religious Initiative. I am software, not God, Jesus, a prophet, or a supernatural being. I do not know God's will for you, and I am not a replacement for clergy, a counselor, or your own conscience. You are free to disagree with anything I offer.";
@@ -146,6 +146,7 @@
     ["origins",["origins","origin"],"Origins, and where everything, including you, actually comes from, sounds like the question here."],
     ["life",["life","abundant life","meaning of life"],"Life, and what makes it feel full rather than just busy or thin, sounds like what you are asking about."],
     ["money",["money","finances","financial","bills","debt","paycheck","work","working","job"],"Work, money, and financial stress, and how they press on everything else, sounds like what is weighing on you."],
+    ["mary",["mary","maryam","virgin mary","mary in the quran","mary in the koran","quran","qur'an","koran","surah","surah maryam"],"Mary, and why she appears in both the Ethiopian Bible and the Quran, sounds like what you are asking about."],
     ["evidence",["evidence","historical evidence","historical jesus","did jesus exist","is jesus real","proof of jesus","prove jesus","ancient witnesses","outside the bible","proof"],"Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about."]
   ];
   var INTERPRETATIONS = {
@@ -190,7 +191,8 @@
     "origins": "Interpretation, not Scripture: origins in Scripture are often described as God creating, which different traditions read in different ways alongside scientific accounts of how the universe developed. A theological claim about who creates does not, on its own, settle a scientific question about how.",
     "life": "Interpretation, not Scripture: life in Scripture is often described as abundant, not just as survival or busyness. Abundance here is not a promise of wealth or ease, and its absence in a hard season is not a spiritual failure.",
     "money": "Interpretation, not Scripture: money worries are often described as anxiety about real needs, food, clothing, housing, and bills, not as a lack of faith. Accountability about money and compassion for financial hardship belong together, and struggling financially does not automatically mean spiritual failure. If bills or debt are overwhelming, practical help from trusted people and services matters alongside reflection.",
-    "evidence": "Interpretation, not Scripture: historical evidence is treated here as a separate kind of material from Scripture itself. It can inform what you think about Jesus as a historical figure, without settling theological claims, and disputed artifacts should be named as disputed."
+    "evidence": "Interpretation, not Scripture: historical evidence is treated here as a separate kind of material from Scripture itself. It can inform what you think about Jesus as a historical figure, without settling theological claims, and disputed artifacts should be named as disputed.",
+    "mary": "Interpretation, not Scripture: this answer is about Mary, the mother of Jesus, not Mary Magdalene or Mary of Bethany. The Ethiopian passage and the Quran summary below are different kinds of material, kept separate, and they do not agree on who Jesus is. That difference is stated in the answer itself, and you are free to weigh it yourself."
   };
   var LENSES_TEXT = "Five lenses, used only when relevant and labeled here as product lenses, not as Scripture:\n1. Text: what the passage actually says, in the translation named.\n2. History and context: when and for whom it was written, as far as that is known.\n3. Interpretive traditions: how different Christian traditions have read it, where they agree and disagree.\n4. Science and reason: what can be examined, tested, or reasoned about, without manufacturing proof.\n5. Personal discernment: what this might mean for your own conscience and next step, which only you can decide.";
   function titleCase(s){ return s.replace(/\b\w/g, function(c){ return c.toUpperCase(); }); }
@@ -293,7 +295,7 @@
   function topicsForRef(ref){
     return TOPICMAP[canonicalRef(ref)] || [];
   }
-  // v1.2.8: topic index built once at startup, in exactly the same
+  // v1.2.9: topic index built once at startup, in exactly the same
   // corpus order the old per-reply scan used (books in file order,
   // chapters and verses numerically sorted). The old verseForTopic
   // rescanned all 40,236 verses, sorting every chapter, on every
@@ -335,6 +337,16 @@
       ['Searchable reader', 'https://0xsero.github.io/all-historical-evidence-of-jesus-christ/ Repo: https://github.com/0xSero/all-historical-evidence-of-jesus-christ'],
       ['Question', 'Which part would help most: an ancient witness outside the New Testament, a church father, or an archaeology entry?']
     ];
+  }
+  function marySections(reflection){
+    var s = [['Reflection', reflection]];
+    s = s.concat(scriptureSections('Luke 1:28') || []);
+    s.push(['Note', 'This answer is about Mary, the mother of Jesus. The corpus also names Mary Magdalene and Mary of Bethany, who are different people in the text.']);
+    s.push(['Cross-tradition summary (not Scripture)', 'This summary is in my own words, not a quotation from the Quran, and no Quran text is stored in this app. In Surah 3, Mary is presented as chosen and set apart, and as the mother of Jesus, called the Messiah, son of Mary. In Surah 19, which is named for Mary, an angel announces a son, Mary asks how that can happen, she gives birth alone under a palm tree, and she brings the child to her people. In Surah 21 and Surah 66, she is described as guarding her chastity, and she and her son are called a sign. In Surah 23, the son of Mary and his mother are called a sign.']);
+    s.push(['Where the accounts agree and where they differ', 'They agree on an angel announcing a son, on Mary asking how that can happen, and on a birth without a human father, presented as a sign. They differ on who Jesus is. Luke 1:35, in the Ethiopian text in this corpus, calls the child the Son of God. The Quran, in Surah 19:35, says it is not fitting for God to take a son, and in Surah 19:30 presents Jesus as a servant of God and a prophet. Those are different claims, and this companion does not pretend they are the same. Why the Quran includes Mary at all has no single agreed answer. The Quran retells figures shared with earlier scriptures, and Mary carries the birth story. That is historical reasoning, not a quotation, and it is labeled as reasoning here.']);
+    s.push(['Sources and confidence', 'Verified in the local Ethiopian corpus, high confidence: Luke 1:26-38, Luke 1:46-48, Luke 2:19, Matthew 1:18-25, John 2:1-5, John 19:25-27, Acts 1:14. Verified against Sahih International on Quran.com, high confidence for the locators, summary in own words: Quran 3:33-51, 19:16-36, 21:91, 23:50, 66:12. Counts of mentions differ by counting method, low confidence for any single number, so no single count is given here. Ethiopian tradition, attributed, not certified here: Mary is venerated as the Ark of the Covenant and under the title Kidane Mehret, Covenant of Mercy. Feast counts and dates differ between sources, so none is certified here. Links, Sahih International: https://legacy.quran.com/19/16-34 and https://legacy.quran.com/3/33-51']);
+    s.push(['Question', 'Which part would help most: the Ethiopian passage, the Quran summary, or where the two accounts differ? You are free to disagree with any of it.']);
+    return s;
   }
   function detectTopic(text){
     var low = text.toLowerCase();
@@ -399,7 +411,7 @@
       return info('Commands you can use:\n/verse John 3:16 - retrieve a passage by reference, if it is in the local corpus\n/edition - show the foundation edition, KJV parallel, and canon labels\n/lenses - show the five lenses used here\n/pause - take a Sacred Pause\n/continue - continue the conversation\n/privacy - how this phone file handles your words\n/reset - clear this session only\n\nThe foundation is the Ethiopian Orthodox Bible, in a modern English compilation rooted in the Septuagint and Ge\'ez tradition. King James is shown only as a separate parallel, never merged into Ethiopian text. You can also just talk. I will listen first, and I will not quote Scripture in my first reply unless you ask for a specific passage.');
     }
     if (low === '/edition' || low === 'edition'){
-      return info('Phone version v1.2.8.\nFoundation edition: Ethiopian Orthodox Bible, modern English compilation rooted in the Septuagint and Ge\'ez tradition. This file is a modern compilation, not an ancient manuscript itself.\nEthiopian passages in this build: ' + verseCount + ' unique verses in this phone file, plus chapter-1 aliases for Susanna, Bel, and Letter of Jeremiah in the desktop version.\nKing James parallel passages in this build: ' + Object.keys(KJV).length + '\nCanon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), deuterocanonical (in Orthodox canons, not in the 66-book canon), and ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\nSusanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, and the Song of the Three Children as Daniel 3:24-97, as in the PDF. You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, and I will map those to the corpus chapters.');
+      return info('Phone version v1.2.9.\nFoundation edition: Ethiopian Orthodox Bible, modern English compilation rooted in the Septuagint and Ge\'ez tradition. This file is a modern compilation, not an ancient manuscript itself.\nEthiopian passages in this build: ' + verseCount + ' unique verses in this phone file, plus chapter-1 aliases for Susanna, Bel, and Letter of Jeremiah in the desktop version.\nKing James parallel passages in this build: ' + Object.keys(KJV).length + '\nCanon labels: shared (in both the Ethiopian canon and the 66-book KJV canon), deuterocanonical (in Orthodox canons, not in the 66-book canon), and ethiopian-only (for example Enoch, Jubilees, and Meqabyan I to III).\nSusanna is stored as Daniel 13, Bel and the Dragon as Daniel 14, and the Song of the Three Children as Daniel 3:24-97, as in the PDF. You can also ask for Susanna 1:1, Bel 1:1, or Letter of Jeremiah 1:1, and I will map those to the corpus chapters.');
     }
     if (low === '/privacy' || low === 'privacy'){
       return info('Privacy, phone version, stated honestly: this file runs entirely in your browser, on your device. There is no server, no account, no network call, and nothing is sent anywhere. Your conversation lives only in this page, in memory. Closing or reloading the page, or using Clear this session, clears it. Nothing is written to a file by this page. This is not a diagnosis, counseling, or pastoral care tool, and it does not claim encryption or deletion it does not have, because there is no stored conversation to delete.');
@@ -499,6 +511,9 @@
       if (topicV === 'evidence'){
         return finish(evidenceSections(state.lastReflection || 'Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about.'), true);
       }
+      if (topicV === 'mary'){
+        return finish(marySections(state.lastReflection || 'Mary, and why she appears in both the Ethiopian Bible and the Quran, sounds like what you are asking about.'), true);
+      }
       if (!verseRefV){
         return finish([
           ['Reflection', 'I do not have a retrieved passage for that topic in the local corpus, so I will not invent one.'],
@@ -535,6 +550,9 @@
       if (topic2 === 'evidence'){
         return finish(evidenceSections(state.lastReflection || 'Historical evidence, and what counts as evidence for Jesus outside the New Testament, sounds like what you are asking about.'), true);
       }
+      if (topic2 === 'mary'){
+        return finish(marySections(state.lastReflection || 'Mary, and why she appears in both the Ethiopian Bible and the Quran, sounds like what you are asking about.'), true);
+      }
       if (!verseRef){
         return finish([
           ['Reflection', 'I do not have a retrieved passage for that topic in the local corpus, so I will not invent one.'],
@@ -552,6 +570,10 @@
       if (topic3 === 'evidence'){
         state.turns++;
         return finish(evidenceSections(reflection3), true);
+      }
+      if (topic3 === 'mary'){
+        state.turns++;
+        return finish(marySections(reflection3), true);
       }
       var verseRef3 = verseForTopic(topic3);
       state.turns++;
@@ -628,7 +650,7 @@
     function send(text){
       var message = (text !== undefined && text !== null ? text : input.value).trim();
       if (!message) return;
-      // v1.2.8 busy guard: ignore repeat taps while a reply is being
+      // v1.2.9 busy guard: ignore repeat taps while a reply is being
       // prepared, so they cannot queue up and make Send look frozen.
       // The guard is checked before the input is cleared, so a tap
       // ignored here never loses the typed message.
