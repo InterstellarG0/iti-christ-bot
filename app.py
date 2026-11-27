@@ -36,6 +36,7 @@ from urllib.parse import urlparse
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from engine import Session, load_corpus, list_verses, respond  # noqa: E402
+from session_guard import SessionStore  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent
 INTRO = """Christ Bot - a scripture-centered reflection companion.
@@ -97,7 +98,7 @@ def run_demo(corpus: dict) -> int:
 
 
 def run_web(corpus: dict, port: int) -> int:
-    sessions: dict[str, Session] = {}
+    sessions = SessionStore(lambda: Session(corpus))
     web_file = ROOT / "web" / "index.html"
 
     class Handler(BaseHTTPRequestHandler):
@@ -133,9 +134,13 @@ def run_web(corpus: dict, port: int) -> int:
                 return
             sid = payload.get("session") or str(uuid.uuid4())
             message = (payload.get("message") or "").strip()
-            if sid not in sessions:
-                sessions[sid] = Session(corpus)
-            result = respond(sessions[sid], message) if message else {
+            try:
+                session = sessions.get_or_create(sid)
+            except ValueError:
+                self.send_response(400)
+                self.end_headers()
+                return
+            result = respond(session, message) if message else {
                 "text": "Please write something to begin.",
                 "sections": [("", "Please write something to begin.")],
                 "crisis": False, "pause_offered": False, "scripture_ref": None,
